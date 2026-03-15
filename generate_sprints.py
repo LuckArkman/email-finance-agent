@@ -1,7 +1,7 @@
 import os
 import json
 
-base_dir = r"d:\email-finance-agent\sprints"
+base_dir = r"d:\email-finance-agent\backend\src\sprints"
 os.makedirs(base_dir, exist_ok=True)
 
 sprints = [
