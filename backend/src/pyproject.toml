@@ -11,6 +11,9 @@ python = "^3.12"
 fastapi = "^0.110.0"
 uvicorn = "^0.28.0"
 pydantic-settings = "^2.2.1"
+sqlalchemy = "^2.0.29"
+alembic = "^1.13.1"
+asyncpg = "^0.29.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"

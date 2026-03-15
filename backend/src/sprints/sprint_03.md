@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Setup SQLAlchemy 2.0 (Models Base).
-- Configuração assíncrona com Asyncpg.
-- Criação de tabelas: Users, Tenants (Workspaces), Invoices, Payments.
-- Setup do Alembic e Migration Inicial.
+- [x] Setup SQLAlchemy 2.0 (Models Base).
+- [x] Configuração assíncrona com Asyncpg.
+- [x] Criação de tabelas: Users, Tenants (Workspaces), Invoices, Payments.
+- [x] Setup do Alembic e Migration Inicial.
 
 ---
 
