@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Inicialização do Poetry.
-- Configuração de Linters (Ruff, Black, Mypy).
-- Definição do Entrypoint FastAPI.
-- Criação de Action no GitHub para rodar pytest em PRs.
+- [x] Inicialização do Poetry.
+- [x] Configuração de Linters (Ruff, Black, Mypy).
+- [x] Definição do Entrypoint FastAPI.
+- [x] Criação de Action no GitHub para rodar pytest em PRs.
 
 ---
 
