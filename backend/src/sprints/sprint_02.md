@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Criação do Dockerfile multi-stage usando Python 3.12-slim.
-- Definição do arquivo docker-compose.yml.
-- Scripts entrypoint e wait-for-it.
-- Mapeamento de volumes locais.
+- [x] Criação do Dockerfile multi-stage usando Python 3.12-slim.
+- [x] Definição do arquivo docker-compose.yml.
+- [x] Scripts entrypoint e wait-for-it.
+- [x] Mapeamento de volumes locais.
 
 ---
 

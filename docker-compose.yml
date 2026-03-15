@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: efa_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/src:/app/src
+    environment:
+      - PROJECT_NAME=AI Email Finance Agent
+      - ENVIRONMENT=development
+      - DEBUG=True
+    command: ["/app/start-reload.sh"]
+    restart: unless-stopped
