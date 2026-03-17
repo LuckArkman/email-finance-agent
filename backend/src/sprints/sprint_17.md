@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Carregamento e inferência com modelo open-source Transformers via HuggingFace.
-- Identificação de Bound-boxes de itens vs Cabeçalho.
-- Geração de árvore estrutural semântica do documento.
+- [x] Carregamento e inferência com modelo open-source Transformers via HuggingFace.
+- [x] Identificação de Bound-boxes de itens vs Cabeçalho.
+- [x] Geração de árvore estrutural semântica do documento.
 
 ---
 

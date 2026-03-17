@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Visualização estilo Modal para revisão ultra rápida.
-- Aceite (Submit) e disparo de Put Method que atualizará base do Banco de Dados e disparar aprendizado contínuo (Retrain/Prompt Adjust).
+- [x] Visualização estilo Modal para revisão ultra rápida.
+- [x] Aceite (Submit) e disparo de Put Method que atualizará base do Banco de Dados e disparar aprendizado contínuo (Retrain/Prompt Adjust).
 
 ---
 

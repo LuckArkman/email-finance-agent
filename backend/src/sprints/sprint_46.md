@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Validação de todas Branches (Merge main).
-- Homologação final UAT (User Acceptance Testing) com stakeholders base.
+- [x] Validação de todas Branches (Merge main).
+- [x] Homologação final UAT (User Acceptance Testing) com stakeholders base.
 
 ---
 

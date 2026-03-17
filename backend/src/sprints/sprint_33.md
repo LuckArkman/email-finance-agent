@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- `npm create vite@latest` local (Vue/React).
-- Configuração do tsconfig.
-- Setup inicial da árvore `src/components`, `src/views`, `src/store`.
+- [x] `npm create vite@latest` local (Vue/React).
+- [x] Configuração do tsconfig.
+- [x] Setup inicial da árvore `src/components`, `src/views`, `src/store`.
 
 ---
 

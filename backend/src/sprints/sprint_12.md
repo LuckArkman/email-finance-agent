@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Conversão para Grayscale.
-- Binarização adaptativa OTSU.
-- Morphological transforms (Dilatar e Erodar fontes fracas).
-- Salvar nova imagem consolidada.
+- [x] Conversão para Grayscale.
+- [x] Binarização adaptativa OTSU.
+- [x] Morphological transforms (Dilatar e Erodar fontes fracas).
+- [x] Salvar nova imagem consolidada.
 
 ---
 

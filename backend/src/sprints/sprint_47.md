@@ -9,7 +9,7 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Finalização SDK de integração via API Rest customizável com Zapier / Make.com / PowerAutomate.
+- [x] Finalização SDK de integração via API Rest customizável com Zapier / Make.com / PowerAutomate.
 
 ---
 

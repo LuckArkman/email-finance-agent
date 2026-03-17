@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Setup de Playwright configurado via headless browser.
-- Execução de Simulação E2E: Disparo de Email -> Backend recebe -> OCR Processa -> WebSocket atualiza Front -> Aparece no Dashboard.
+- [x] Setup de Playwright configurado via headless browser.
+- [x] Execução de Simulação E2E: Disparo de Email -> Backend recebe -> OCR Processa -> WebSocket atualiza Front -> Aparece no Dashboard.
 
 ---
 

@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Instanciação do thefuzz para comparar strings (ex: 'Amazon Web Srvs' -> 'Amazon').
-- Auto categorização utilizando dados estatísticos anteriores (Ex: Vendor 'Uber' -> Travel).
+- [x] Instanciação do thefuzz para comparar strings (ex: 'Amazon Web Srvs' -> 'Amazon').
+- [x] Auto categorização utilizando dados estatísticos anteriores (Ex: Vendor 'Uber' -> Travel).
 
 ---
 

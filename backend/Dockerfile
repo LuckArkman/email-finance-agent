@@ -37,8 +37,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends netcat-traditio
 COPY --from=builder /app/.venv /app/.venv
 
 # Copy scripts and set permissions
-COPY entrypoint.sh start-reload.sh ./
-RUN chmod +x /app/entrypoint.sh /app/start-reload.sh
+COPY entrypoint.sh start-reload.sh start.sh ./
+RUN chmod +x /app/entrypoint.sh /app/start-reload.sh /app/start.sh
 
 # Copy application source
 COPY src/ ./src/

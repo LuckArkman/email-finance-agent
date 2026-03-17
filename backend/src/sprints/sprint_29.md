@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Controllers GET /invoices, POST /invoices/manual, GET /invoices/{id}.
-- Parâmetros Fastapi (Paginação, sorting, filtro de datas).
+- [x] Controllers GET /invoices, POST /invoices/manual, GET /invoices/{id}.
+- [x] Parâmetros Fastapi (Paginação, sorting, filtro de datas).
 
 ---
 

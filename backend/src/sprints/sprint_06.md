@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Conexão SSL via imaplib.
-- Autenticação e loop de idle (IMAP IDLE) ou polling.
-- Decodificação de headers (Remetente, Assunto).
-- Conversão para formato interno DTO.
+- [x] Conexão SSL via imaplib.
+- [x] Autenticação e loop de idle (IMAP IDLE) ou polling.
+- [x] Decodificação de headers (Remetente, Assunto).
+- [x] Conversão para formato interno DTO.
 
 ---
 

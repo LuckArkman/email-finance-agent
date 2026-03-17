@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Criação da Tabela Complexa de Datatable.
-- Ordenação, Paginação, Botões contextuais de status de faturas (Pendentes, Processadas, Recusadas).
+- [x] Criação da Tabela Complexa de Datatable.
+- [x] Ordenação, Paginação, Botões contextuais de status de faturas (Pendentes, Processadas, Recusadas).
 
 ---
 

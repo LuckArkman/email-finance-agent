@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Setup do conector boto3.
-- Geração de Pre-Signed URLs.
-- Upload do RAW file e Upload do Processed file.
-- Atualização do path no PostgreSQL Database.
+- [x] Setup do conector boto3.
+- [x] Geração de Pre-Signed URLs.
+- [x] Upload do RAW file e Upload do Processed file.
+- [x] Atualização do path no PostgreSQL Database.
 
 ---
 

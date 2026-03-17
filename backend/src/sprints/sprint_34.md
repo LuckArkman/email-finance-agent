@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Instalação de utilitários Tailwind.
-- Criação do ThemeConfig. Glassmorphism Utilities.
-- Definição do Layout principal com Topbar e Left Sidebar dinâmica.
+- [x] Instalação de utilitários Tailwind.
+- [x] Criação do ThemeConfig. Glassmorphism Utilities.
+- [x] Definição do Layout principal com Topbar e Left Sidebar dinâmica.
 
 ---
 

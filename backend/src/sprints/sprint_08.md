@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Setup de Credenciais GCP (Service Account ou User Auth).
-- Uso do google-api-python-client.
-- Integração com Google Pub/Sub para push notifications de chegada de emails.
+- [x] Setup de Credenciais GCP (Service Account ou User Auth).
+- [x] Uso do google-api-python-client.
+- [x] Integração com Google Pub/Sub para push notifications de chegada de emails.
 
 ---
 

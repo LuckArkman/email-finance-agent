@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Integração do Datadog e Sentry para logs de Exceção.
-- Grafana para visualizar dashboard de Erros e Throughput das Invoices processadas.
+- [x] Integração do Datadog e Sentry para logs de Exceção.
+- [x] Grafana para visualizar dashboard de Erros e Throughput das Invoices processadas.
 
 ---
 

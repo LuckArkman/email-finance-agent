@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Inicialização psm configurations no Tesseract.
-- Chamada assíncrona para extração de String text (Text string pura).
-- Export do OCR bruto para a coleção MongoDB correspondente.
+- [x] Inicialização psm configurations no Tesseract.
+- [x] Chamada assíncrona para extração de String text (Text string pura).
+- [x] Export do OCR bruto para a coleção MongoDB correspondente.
 
 ---
 

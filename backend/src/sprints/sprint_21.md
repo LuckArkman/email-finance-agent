@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Algoritmo para cruzar a probabilidade log-likeliehood do LLM / OCR em campos como Valor Pago.
-- Atribuição de score 0-100%.
-- Se <90%, flag: needs_manual_review = True.
+- [x] Algoritmo para cruzar a probabilidade log-likeliehood do LLM / OCR em campos como Valor Pago.
+- [x] Atribuição de score 0-100%.
+- [x] Se <90%, flag: needs_manual_review = True.
 
 ---
 

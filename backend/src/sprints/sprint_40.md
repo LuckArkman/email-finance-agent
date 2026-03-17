@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- UI de Filtros avançados com múltiplos Inputs (Dates, Fornecedor array, Categoria).
-- Download programático do Arquivo CSV construído através de Blobs de resposta da API.
+- [x] UI de Filtros avançados com múltiplos Inputs (Dates, Fornecedor array, Categoria).
+- [x] Download programático do Arquivo CSV construído através de Blobs de resposta da API.
 
 ---
 

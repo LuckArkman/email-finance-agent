@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Módulo Client Connector com HTTPx.
-- Auth Token sync e webhook receiver do ERP da ponta.
-- Push da Entity contábil convertida.
+- [x] Módulo Client Connector com HTTPx.
+- [x] Auth Token sync e webhook receiver do ERP da ponta.
+- [x] Push da Entity contábil convertida.
 
 ---
 

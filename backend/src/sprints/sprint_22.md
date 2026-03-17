@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Criação da Entidade HumanReviewQueue.
-- Serviço que isola o doc processado mantendo pendente no sistema financeiro.
-- Envio de alerta WebSocket notificando os administradores.
+- [x] Criação da Entidade HumanReviewQueue.
+- [x] Serviço que isola o doc processado mantendo pendente no sistema financeiro.
+- [x] Envio de alerta WebSocket notificando os administradores.
 
 ---
 

@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Subida do container Redis.
-- Inicialização do Celery Worker.
-- Definição de Tasks Abstratas de tentativa/retry.
-- Roteamento de filas secundárias (e.g., ai_queue, general_queue).
+- [x] Subida do container Redis.
+- [x] Inicialização do Celery Worker.
+- [x] Definição de Tasks Abstratas de tentativa/retry.
+- [x] Roteamento de filas secundárias (e.g., ai_queue, general_queue).
 
 ---
 

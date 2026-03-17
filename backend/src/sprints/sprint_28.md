@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Adição do tenant_id global nas sessões usando context_vars ou restrição no `get_current_user`.
-- Testes RLS (Row Level Security).
+- [x] Adição do tenant_id global nas sessões usando context_vars ou restrição no `get_current_user`.
+- [x] Testes RLS (Row Level Security).
 
 ---
 

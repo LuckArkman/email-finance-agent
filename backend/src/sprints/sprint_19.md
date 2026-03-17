@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Criação de prompt templates no Langchain focados em Headings.
-- Mapeamento estrito de datetimes (tratar Mês/Dia vs Dia/Mês).
-- Execução de evals e fine-tuning do prompt.
+- [x] Criação de prompt templates no Langchain focados em Headings.
+- [x] Mapeamento estrito de datetimes (tratar Mês/Dia vs Dia/Mês).
+- [x] Execução de evals e fine-tuning do prompt.
 
 ---
 

@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Obtenção do ângulo dos blocos de texto.
-- Rotação afim matemática da imagem em -ângulo detectado.
-- Preenchimento de bordas (Background padding).
+- [x] Obtenção do ângulo dos blocos de texto.
+- [x] Rotação afim matemática da imagem em -ângulo detectado.
+- [x] Preenchimento de bordas (Background padding).
 
 ---
 

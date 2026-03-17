@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Definição do conector LLM via LangChain (ChatOpenAI).
-- Definição do output_parser com Pydantic.
-- Tratativa de rate-limits no disparo.
+- [x] Definição do conector LLM via LangChain (ChatOpenAI).
+- [x] Definição do output_parser com Pydantic.
+- [x] Tratativa de rate-limits no disparo.
 
 ---
 

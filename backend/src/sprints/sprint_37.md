@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Integração de Viewer PDF Canvas.
-- Sincronização e Highlights entre campo Extraído (Forms na direita) vs Bound-Box da Imagem original (esquerda).
+- [x] Integração de Viewer PDF Canvas.
+- [x] Sincronização e Highlights entre campo Extraído (Forms na direita) vs Bound-Box da Imagem original (esquerda).
 
 ---
 

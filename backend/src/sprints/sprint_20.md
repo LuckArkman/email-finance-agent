@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Identificação de array de itens da compra.
-- Parsing the Table layout para o LLM.
-- Garantia de fechamento de sum: Soma dos (ValorUnitário*Qtd) deve igualar ao total do item.
+- [x] Identificação de array de itens da compra.
+- [x] Parsing the Table layout para o LLM.
+- [x] Garantia de fechamento de sum: Soma dos (ValorUnitário*Qtd) deve igualar ao total do item.
 
 ---
 

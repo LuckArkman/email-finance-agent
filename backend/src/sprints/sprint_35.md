@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Setup de Store (Redux ou Pinia).
-- Construção do service camada de Rede (Axios Wrapper com Interceptors pro Token JWT).
-- Tela de Autenticação / Forgot Password completas.
+- [x] Setup de Store (Redux ou Pinia).
+- [x] Construção do service camada de Rede (Axios Wrapper com Interceptors pro Token JWT).
+- [x] Tela de Autenticação / Forgot Password completas.
 
 ---
 

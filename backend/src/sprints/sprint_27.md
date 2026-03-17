@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Integração PyJWT.
-- Rotas /login/access-token, hashing BCRYPT da senha.
-- Interceptors dependentes (get_current_active_user) do FastAPI.
+- [x] Integração PyJWT.
+- [x] Rotas /login/access-token, hashing BCRYPT da senha.
+- [x] Interceptors dependentes (get_current_active_user) do FastAPI.
 
 ---
 

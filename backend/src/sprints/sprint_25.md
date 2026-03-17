@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Algoritmo analítico de reconciliação cruzando os 3 documentos via PO Number e Amount.
-- Validação matemática de desvios e tolerâncias (Centavos).
+- [x] Algoritmo analítico de reconciliação cruzando os 3 documentos via PO Number e Amount.
+- [x] Validação matemática de desvios e tolerâncias (Centavos).
 
 ---
 

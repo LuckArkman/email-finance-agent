@@ -81,3 +81,41 @@ class Transaction(BaseModel):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     invoice = relationship("InvoiceRecord", back_populates="payments")
+
+class ReviewQueueModel(BaseModel):
+    """
+    Queue to isolate documents correctly parsed but waiting on human approval
+    due to low Confidence Score.
+    """
+    __tablename__ = "review_queue"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    invoice_id = Column(String, ForeignKey("invoices.id"), nullable=False)
+    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
+    
+    assigned_to = Column(String, ForeignKey("users.id"), nullable=True) # Analyst reviewing it
+    status = Column(String, default="pending_review") # pending_review, approved, rejected
+    confidence_score = Column(Float, default=0.0)
+    
+    reason = Column(Text, nullable=True) # e.g. "Low OCR confidence on Total Amount"
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    resolved_at = Column(DateTime, nullable=True)
+    
+class WebhookConfig(BaseModel):
+    """
+    Configuration for outbound webhooks per tenant (Zapier, Make, etc.).
+    """
+    __tablename__ = "webhook_configs"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    tenant_id = Column(String, ForeignKey("tenants.id"), unique=True, nullable=False)
+    
+    target_url = Column(String, nullable=True)
+    secret_key = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    tenant = relationship("Tenant")

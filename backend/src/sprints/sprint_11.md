@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Load do arquivo binário.
-- Splitting do arquivo em caso de PDFs longos (ex: page 1 a 3 = invoice, 4 a 10 = termos).
-- Parsing de metadados nativos via PyMuPDF.
+- [x] Load do arquivo binário.
+- [x] Splitting do arquivo em caso de PDFs longos (ex: page 1 a 3 = invoice, 4 a 10 = termos).
+- [x] Parsing de metadados nativos via PyMuPDF.
 
 ---
 

@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Geração de Tokens via MSAL.
-- Requisições GET para o endpoint /me/messages.
-- Criação de Webhooks (Subscriptions) no Graph API para notificações em tempo real.
+- [x] Geração de Tokens via MSAL.
+- [x] Requisições GET para o endpoint /me/messages.
+- [x] Criação de Webhooks (Subscriptions) no Graph API para notificações em tempo real.
 
 ---
 

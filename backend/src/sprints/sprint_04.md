@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Configuração do driver MotorMotor client.
-- Modelagem de schemata Pydantic (validação).
-- Conexão e injeção de dependência no FastAPI.
-- Adição do Mongo no compose local.
+- [x] Configuração do driver MotorMotor client.
+- [x] Modelagem de schemata Pydantic (validação).
+- [x] Conexão e injeção de dependência no FastAPI.
+- [x] Adição do Mongo no compose local.
 
 ---
 

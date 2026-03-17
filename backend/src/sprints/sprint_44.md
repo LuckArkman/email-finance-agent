@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Escrever Manifestos Deployment.yaml, Service.yaml.
-- Horizontal Pod Autoscaler associado ao tamanho da fila Celery/Redis via metricas customizadas.
-- CI/CD Deploy Stage Integrado.
+- [x] Escrever Manifestos Deployment.yaml, Service.yaml.
+- [x] Horizontal Pod Autoscaler associado ao tamanho da fila Celery/Redis via metricas customizadas.
+- [x] CI/CD Deploy Stage Integrado.
 
 ---
 

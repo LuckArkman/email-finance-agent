@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Habilitar FastApi Websocket endpoint /ws/tenant_id.
-- Escutar o canal do Redis (Pub/Sub).
-- Disparo Broadcasting do evento JSON.
+- [x] Habilitar FastApi Websocket endpoint /ws/tenant_id.
+- [x] Escutar o canal do Redis (Pub/Sub).
+- [x] Disparo Broadcasting do evento JSON.
 
 ---
 

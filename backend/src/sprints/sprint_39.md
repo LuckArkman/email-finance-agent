@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Chamadas as rotas do backend AnalyticsService.
-- Gráficos Lineares, Bar Charts e Widgets informativos.
-- Atualizações fluidas via Socket connection.
+- [x] Chamadas as rotas do backend AnalyticsService.
+- [x] Gráficos Lineares, Bar Charts e Widgets informativos.
+- [x] Atualizações fluidas via Socket connection.
 
 ---
 

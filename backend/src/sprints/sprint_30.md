@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Views em PostgreSQL + Queries de grupamento (GROUP BY Month).
-- Endpoint /analytics/cashflow.
-- Cache da Query complexa no Redis para velocidade 0ms.
+- [x] Views em PostgreSQL + Queries de grupamento (GROUP BY Month).
+- [x] Endpoint /analytics/cashflow.
+- [x] Cache da Query complexa no Redis para velocidade 0ms.
 
 ---
 

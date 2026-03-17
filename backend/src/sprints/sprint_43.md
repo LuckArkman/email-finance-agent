@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Script Locust para floodar Webhooks paralelos com PDFs densos(>10MB).
-- Analise do comportamento de Redis e Memória e latência API.
+- [x] Script Locust para floodar Webhooks paralelos com PDFs densos(>10MB).
+- [x] Analise do comportamento de Redis e Memória e latência API.
 
 ---
 

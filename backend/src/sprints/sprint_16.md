@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Integração de boto3 para client do textract.
-- Chamada à API `analyze_expense`.
-- Parsing de Key-Value pairs que o Amazon retorna nativo.
-- Redução / Transformação em DTO padronizado.
+- [x] Integração de boto3 para client do textract.
+- [x] Chamada à API `analyze_expense`.
+- [x] Parsing de Key-Value pairs que o Amazon retorna nativo.
+- [x] Redução / Transformação em DTO padronizado.
 
 ---
 

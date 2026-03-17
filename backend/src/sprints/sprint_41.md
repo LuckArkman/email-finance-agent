@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Middleware FastAPI com Token Bucket strategy (Slowapi).
-- Ocultação (Data obfuscation) dos painéis e PII logs gravados pelo AppLogger.
-- Criptografia dos dados S3 AES-256 Enabled Server Side.
+- [x] Middleware FastAPI com Token Bucket strategy (Slowapi).
+- [x] Ocultação (Data obfuscation) dos painéis e PII logs gravados pelo AppLogger.
+- [x] Criptografia dos dados S3 AES-256 Enabled Server Side.
 
 ---
 

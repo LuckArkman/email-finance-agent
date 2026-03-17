@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Varredura de partes MIME da mensagem.
-- Download e identificação de file signature (Magic bytes).
-- Remoção de blobs irrelevantes (imagens de rodapé, linkedin icons).
-- Escrita dos arquivos brutos no S3 ou Temp storage.
+- [x] Varredura de partes MIME da mensagem.
+- [x] Download e identificação de file signature (Magic bytes).
+- [x] Remoção de blobs irrelevantes (imagens de rodapé, linkedin icons).
+- [x] Escrita dos arquivos brutos no S3 ou Temp storage.
 
 ---
 

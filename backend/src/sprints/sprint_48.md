@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Ativação real de Domínios, SSL Lets Encrypt Prod.
-- Operação Inicial com Hand-Off documentado.
+- [x] Ativação real de Domínios, SSL Lets Encrypt Prod.
+- [x] Operação Inicial com Hand-Off documentado.
 
 ---
 

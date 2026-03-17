@@ -9,9 +9,9 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Treinamento local de um SVC ou uso leve de LLM zero-shot no corpo do e-mail.
-- Rotulação das categorias: AP, AR, Receipt, Non-Financial.
-- Fluxo de descarte de spams (Mailing lists de newsletter).
+- [x] Treinamento local de um SVC ou uso leve de LLM zero-shot no corpo do e-mail.
+- [x] Rotulação das categorias: AP, AR, Receipt, Non-Financial.
+- [x] Fluxo de descarte de spams (Mailing lists de newsletter).
 
 ---
 

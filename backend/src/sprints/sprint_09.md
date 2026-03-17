@@ -9,10 +9,10 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Criação de endpoint genérico /api/v1/ingest/webhook.
-- Validação de assinaturas (HMAC).
-- Sanitização de payload entrante.
-- Encaminhamento do documento para fila de processamento.
+- [x] Criação de endpoint genérico /api/v1/ingest/webhook.
+- [x] Validação de assinaturas (HMAC).
+- [x] Sanitização de payload entrante.
+- [x] Encaminhamento do documento para fila de processamento.
 
 ---
 

@@ -9,8 +9,8 @@
 ## ⚙️ Processos e Regras de Implementação
 Abaixo constam as entregas minuciosamente detalhadas desta Sprint:
 
-- Regex avançada para padrões VIES/CNPJ.
-- Extração percentual vs Bruto/Líquido matematicamente verificado no backend.
+- [x] Regex avançada para padrões VIES/CNPJ.
+- [x] Extração percentual vs Bruto/Líquido matematicamente verificado no backend.
 
 ---
 
