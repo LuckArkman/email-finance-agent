@@ -29,17 +29,26 @@ class TelemetryManager:
     @staticmethod
     def setup_sentry():
         settings = BaseAPIConfig.get_settings()
-        if settings.debug:
-            print("Sentry disabled in DEBUG mode.")
+        
+        # Pull from env or settings if available. 
+        # For now, it's safer to only skip if it's the known internal placeholder or empty.
+        dsn = getattr(settings, "sentry_dsn", "")
+        
+        if not dsn or "your-sentry-dsn" in dsn:
+            print("Sentry DSN not provided or is placeholder. Skipping init.")
             return
 
-        sentry_sdk.init(
-            dsn="https://your-sentry-dsn@sentry.io/project", # Placeholder
-            integrations=[FastApiIntegration()],
-            traces_sample_rate=1.0,
-            profiles_sample_rate=1.0,
-            environment=settings.environment
-        )
+        try:
+            sentry_sdk.init(
+                dsn=dsn,
+                integrations=[FastApiIntegration()],
+                traces_sample_rate=1.0,
+                profiles_sample_rate=1.0,
+                environment=settings.environment
+            )
+            print(f"Sentry initialized in - {settings.environment} mode.")
+        except Exception as e:
+            print(f"Failed to initialize Sentry: {e}")
 
     @staticmethod
     def capture_exception_sentry(exc: Exception):

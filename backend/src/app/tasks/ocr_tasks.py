@@ -1,4 +1,5 @@
 import time
+import random
 from celery import Task
 from app.celery_app import celery_app
 
@@ -51,14 +52,45 @@ def enqueue_ocr_job(self, document_url: str, invoice_id: str, tenant_id: str = "
     This runs asynchronously away from the main loop!
     """
     try:
+        from app.models import ReviewQueueModel, InvoiceStatus, InvoiceRecord
+        from app.database import SessionLocal
+        
         print(f"Starting OCR extraction for {document_url} (Invoice: {invoice_id})")
         # Simulate heavy processing...
-        time.sleep(5)
-        print("OCR complete")
+        time.sleep(3)
+        
+        # Determine confidence
+        confidence = round(random.uniform(0.7, 1.0), 2)
+        print(f"OCR complete with confidence: {confidence}")
+        
+        if confidence < 0.9:
+            print(f"Low confidence detected for {invoice_id}. Sending to Review Queue.")
+            db = SessionLocal()
+            try:
+                # Update invoice status
+                db.query(InvoiceRecord).filter(InvoiceRecord.id == invoice_id).update({
+                    "status": InvoiceStatus.REVIEW_REQUIRED.value,
+                    "confidence_score": confidence
+                })
+                
+                # Create review entry
+                review = ReviewQueueModel(
+                    invoice_id=invoice_id,
+                    tenant_id=tenant_id,
+                    status="pending_review",
+                    confidence_score=confidence,
+                    reason="Low OCR confidence score from AI Engine"
+                )
+                db.add(review)
+                db.commit()
+            finally:
+                db.close()
+        
         return {
-            "status": "success", 
+            "status": "success" if confidence >= 0.9 else "review_required", 
             "invoice_id": invoice_id, 
             "tenant_id": tenant_id,
+            "confidence": confidence,
             "mocked_total": 1500.50
         }
     except Exception as exc:

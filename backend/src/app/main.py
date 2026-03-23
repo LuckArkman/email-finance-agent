@@ -10,6 +10,7 @@ from slowapi.errors import RateLimitExceeded
 import logging
 from app.obfuscator import SensitiveDataFilter
 from app.telemetry import TelemetryManager
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Response
 
 limiter = Limiter(key_func=get_remote_address)
@@ -22,9 +23,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("uvicorn")
 logger.addFilter(SensitiveDataFilter())
 
+from app.mongo import init_mongo_client, close_mongo_client
+from app.database import engine, BaseModel
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    print("Initializing Database Tables...")
+    async with engine.begin() as conn:
+        await conn.run_sync(BaseModel.metadata.create_all)
+    
     print("Initialize MongoDB Client")
     await init_mongo_client()
     
@@ -49,6 +57,15 @@ def create_fastapi_app() -> FastAPI:
         lifespan=lifespan
     )
     
+    # Configure CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"], # In production, replace with actual frontend domain
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
     app.add_middleware(TenantSecurityMiddleware)
     
     app.state.limiter = limiter
@@ -71,6 +88,9 @@ def create_fastapi_app() -> FastAPI:
     from app.api.analytics import router as analytics_router
     from app.api.websockets import router as websockets_router
     from app.api.settings import router as settings_router
+    from app.api.emails import router as emails_router
+    from app.api.review import router as review_router
+    from app.api.documents import router as documents_router
 
     app.include_router(ingestion_router)
     app.include_router(auth_router)
@@ -78,6 +98,9 @@ def create_fastapi_app() -> FastAPI:
     app.include_router(analytics_router)
     app.include_router(websockets_router)
     app.include_router(settings_router)
+    app.include_router(emails_router)
+    app.include_router(review_router)
+    app.include_router(documents_router)
 
     return app
 

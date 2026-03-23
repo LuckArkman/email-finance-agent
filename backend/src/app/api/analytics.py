@@ -7,15 +7,15 @@ from sqlalchemy import select, func, extract
 
 import redis.asyncio as redis
 from app.database import get_db
-from app.models import InvoiceRecord, User
+from app.models import InvoiceRecord, User, ReviewQueueModel
 from app.security import SecurityDependencies
 from app.tenant import get_current_tenant, filter_by_tenant
 from app.config import BaseAPIConfig
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics"])
 
-# Configs - In production, this should come from environment variables.
-redis_pool = redis.ConnectionPool.from_url("redis://localhost:6379/0", decode_responses=True)
+# Configs - Use the service name defined in docker-compose
+redis_pool = redis.ConnectionPool.from_url("redis://redis:6379/0", decode_responses=True)
 redis_client = redis.Redis(connection_pool=redis_pool)
 
 
@@ -129,4 +129,41 @@ async def get_analytics_vendors(
     
     return {
         "top_vendors": data
+    }
+
+@router.get("/stats")
+async def get_dashboard_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(SecurityDependencies.get_current_user)
+):
+    """
+    Returns high-level KPIS for the dashboard metric cards.
+    """
+    tenant_id = get_current_tenant()
+    
+    # 1. Total spent
+    total_query = select(func.sum(InvoiceRecord.total_amount)).where(InvoiceRecord.tenant_id == tenant_id)
+    total_result = await db.execute(total_query)
+    total_spent = total_result.scalar() or 0.0
+    
+    # 2. Count processed
+    count_query = select(func.count(InvoiceRecord.id)).where(InvoiceRecord.tenant_id == tenant_id)
+    count_result = await db.execute(count_query)
+    count_invoices = count_result.scalar() or 0
+    
+    # 3. Avg confidence index
+    avg_score_query = select(func.avg(InvoiceRecord.confidence_score)).where(InvoiceRecord.tenant_id == tenant_id)
+    avg_score_result = await db.execute(avg_score_query)
+    avg_score = (avg_score_result.scalar() or 0.0) * 100
+    
+    # 4. Count pending human review
+    pending_query = select(func.count(ReviewQueueModel.id)).where(ReviewQueueModel.tenant_id == tenant_id, ReviewQueueModel.status == "pending_review")
+    pending_result = await db.execute(pending_query)
+    pending_count = pending_result.scalar() or 0
+    
+    return {
+        "total_spent": total_spent,
+        "processed_count": count_invoices,
+        "pending_review": pending_count,
+        "avg_confidence": round(avg_score, 1)
     }

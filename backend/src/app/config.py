@@ -12,6 +12,7 @@ class EnvironmentSettings(BaseSettings):
     aws_region: str = "us-east-1"
     aws_s3_bucket_name: str = "finance-agent-documents"
     openai_api_key: str = ""
+    sentry_dsn: str = ""
     
     jwt_secret_key: str = "super_secret_key_change_in_production"
     jwt_algorithm: str = "HS256"
