@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import Optional
 from pydantic import BaseModel
 
@@ -16,11 +17,13 @@ class WebhookUpdateSchema(BaseModel):
 
 @router.get("/webhooks")
 async def get_webhook_settings(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(SecurityDependencies.get_current_user)
 ):
     """Fetch the webhook configuration for the current tenant."""
-    config = db.query(WebhookConfig).filter(WebhookConfig.tenant_id == current_user.tenant_id).first()
+    result = await db.execute(select(WebhookConfig).where(WebhookConfig.tenant_id == current_user.tenant_id))
+    config = result.scalars().first()
+    
     if not config:
         return {"target_url": "", "secret_key": "", "is_active": True}
     return config
@@ -28,11 +31,12 @@ async def get_webhook_settings(
 @router.post("/webhooks")
 async def update_webhook_settings(
     payload: WebhookUpdateSchema,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(SecurityDependencies.get_current_user)
 ):
     """Update or create the webhook configuration for the current tenant."""
-    config = db.query(WebhookConfig).filter(WebhookConfig.tenant_id == current_user.tenant_id).first()
+    result = await db.execute(select(WebhookConfig).where(WebhookConfig.tenant_id == current_user.tenant_id))
+    config = result.scalars().first()
     
     if not config:
         config = WebhookConfig(
@@ -47,6 +51,6 @@ async def update_webhook_settings(
         config.secret_key = payload.secret_key
         config.is_active = payload.is_active
     
-    db.commit()
-    db.refresh(config)
+    await db.commit()
+    await db.refresh(config)
     return config

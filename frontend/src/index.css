@@ -1,8 +1,9 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 @theme {
-  --color-background: hsl(210 40% 98%);
-  --color-foreground: hsl(222 47% 11%);
+  --color-background: #0d1117;
+  --color-foreground: #f8fafc;
   
   --color-primary: #3b82f6;
   --color-primary-dark: #2563eb;
@@ -24,8 +25,8 @@
 }
 
 :root {
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
 }
 
 .dark {
@@ -39,6 +40,12 @@
 body {
   @apply bg-background text-foreground transition-colors duration-300;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f3f4f6;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
 }
 
 /* Glassmorphism utility */

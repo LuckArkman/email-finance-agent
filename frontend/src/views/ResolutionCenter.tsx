@@ -1,156 +1,196 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   CheckCircle2, 
   AlertTriangle, 
   ArrowRight, 
   ArrowLeft,
+  Loader2,
+  FileSearch
 } from 'lucide-react';
 import api from '../services/api';
 import SplitViewer from '../components/SplitViewer';
 import { motion, AnimatePresence } from 'framer-motion';
+import LayoutBase from '../components/LayoutBase';
 
-interface HitlWorkQueueItem {
+interface ReviewItem {
   id: string;
+  invoice_id: string;
   vendor_name: string;
   total_amount: number;
   confidence_score: number;
-  issue_date: string;
-  pdf_url: string;
   reason: string;
+  created_at: string;
 }
 
 const HitlResolutionCenter: React.FC = () => {
-  const [queue, setQueue] = useState<HitlWorkQueueItem[]>([
-    { 
-      id: 'INV-LO-001', 
-      vendor_name: 'Unknwn Suply', 
-      total_amount: 890.00, 
-      confidence_score: 0.65, 
-      issue_date: '2026-03-10',
-      pdf_url: 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
-      reason: 'Low OCR confidence on vendor name'
-    },
-    { 
-      id: 'INV-LO-002', 
-      vendor_name: 'Total Energy', 
-      total_amount: 150.00, 
-      confidence_score: 0.45, 
-      issue_date: '2026-03-12',
-      pdf_url: 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
-      reason: 'Mathematical total mismatch (Subtotal + Tax != Total)'
-    }
-  ]);
-  
+  const [queue, setQueue] = useState<ReviewItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [resolving, setResolving] = useState(false);
+
+  const fetchQueue = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/review/queue');
+      setQueue(response.data);
+    } catch (err) {
+      console.error('Failed to fetch review queue', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchQueue();
+  }, [fetchQueue]);
 
   const currentItem = queue[currentIndex];
 
-  const handleManualApprove = async () => {
+  const handleResolve = async (action: 'approve' | 'reject') => {
+    if (!currentItem) return;
+    setResolving(true);
     try {
-      await api.put(`/invoices/${currentItem.id}`, {
-        status: 'processed',
-        manual_override: true
-      });
+      await api.post(`/review/resolve/${currentItem.id}`, { action });
       
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
-        loadNextInQueue();
-      }, 1500);
+        setQueue(prev => prev.filter((_, i) => i !== currentIndex));
+        if (currentIndex >= queue.length - 1 && currentIndex > 0) {
+          setCurrentIndex(prev => prev - 1);
+        }
+        setResolving(false);
+      }, 1000);
     } catch (err) {
       console.error("Resolution failed", err);
+      setResolving(false);
     }
   };
 
-  const loadNextInQueue = () => {
-    if (currentIndex < queue.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    } else {
-      setQueue([]);
-    }
-  };
+  if (loading) {
+    return (
+      <LayoutBase>
+        <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-gray-500">
+          <Loader2 className="animate-spin text-blue-500" size={40} />
+          <p className="font-medium">Loading Human-in-the-loop Queue...</p>
+        </div>
+      </LayoutBase>
+    );
+  }
 
   if (queue.length === 0) {
     return (
-      <div className="h-[80vh] flex flex-col items-center justify-center text-center space-y-4">
-        <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center">
-          <CheckCircle2 size={40} />
+      <LayoutBase>
+        <div className="h-[70vh] flex flex-col items-center justify-center text-center space-y-6 animate-fade-in">
+          <div className="w-24 h-24 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center shadow-xl shadow-green-500/10">
+            <CheckCircle2 size={48} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold text-white">Inbox Zero!</h2>
+            <p className="text-gray-400 max-w-sm mx-auto">
+              Everything is in order. All automatically processed documents met high confidence requirements.
+            </p>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-white">All caught up!</h2>
-        <p className="text-gray-500 max-w-sm">No more invoices require manual review at this time.</p>
-      </div>
+      </LayoutBase>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in relative h-full">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            Resolution Center
-            <span className="text-sm bg-blue-600/20 text-blue-500 px-3 py-1 rounded-full border border-blue-500/20">
-              {queue.length} Pending
-            </span>
-          </h2>
-          <p className="text-gray-400 mt-1">Resolve AI extraction warnings for low-confidence documents.</p>
-        </div>
+    <LayoutBase>
+      <div className="space-y-6 animate-fade-in relative h-[calc(100vh-140px)] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+              <FileSearch className="text-blue-500" />
+              Resolution Center
+              <span className="text-sm bg-blue-600/20 text-blue-500 px-3 py-1 rounded-full border border-blue-500/20">
+                {queue.length} Pending
+              </span>
+            </h2>
+            <p className="text-gray-400 mt-1">Verify and reconcile AI extraction alerts.</p>
+          </div>
 
-        <div className="flex items-center space-x-2">
-           <button 
-            disabled={currentIndex === 0}
-            onClick={() => setCurrentIndex(c => c - 1)}
-            className="p-3 rounded-xl glass border-white/5 disabled:opacity-30 hover:bg-white/10"
-           >
+          <div className="flex items-center space-x-2">
+            <button 
+              disabled={currentIndex === 0 || resolving}
+              onClick={() => setCurrentIndex(c => c - 1)}
+              className="p-3 rounded-xl glass border border-white/5 disabled:opacity-30 hover:bg-white/10 transition-colors"
+            >
               <ArrowLeft size={20} />
-           </button>
-           <button 
-            disabled={currentIndex === queue.length - 1}
-            onClick={() => setCurrentIndex(c => c + 1)}
-            className="p-3 rounded-xl glass border-white/5 disabled:opacity-30 hover:bg-white/10"
-           >
+            </button>
+            <span className="text-white font-bold text-sm px-4">
+              {currentIndex + 1} / {queue.length}
+            </span>
+            <button 
+              disabled={currentIndex === queue.length - 1 || resolving}
+              onClick={() => setCurrentIndex(c => c + 1)}
+              className="p-3 rounded-xl glass border border-white/5 disabled:opacity-30 hover:bg-white/10 transition-colors"
+            >
               <ArrowRight size={20} />
-           </button>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-2xl flex items-center justify-between gap-3 text-yellow-500 shadow-lg shadow-yellow-500/5">
-         <div className="flex items-center gap-3">
-            <AlertTriangle size={20} />
-            <span className="text-sm font-medium">Issue Detected: <span className="text-white">{currentItem.reason}</span></span>
-         </div>
-         <button 
-          onClick={handleManualApprove}
-          className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-500 transition-colors"
-         >
-           Force Approve
-         </button>
-      </div>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 p-5 rounded-3xl flex items-center justify-between gap-3 text-yellow-500 shadow-xl shadow-yellow-500/5 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <p className="text-xs text-yellow-500/60 font-bold uppercase tracking-widest">Review Reason</p>
+              <p className="text-sm font-bold text-white mt-0.5">{currentItem.reason}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              disabled={resolving}
+              onClick={() => handleResolve('reject')}
+              className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-sm font-bold rounded-xl transition-all border border-red-500/10 disabled:opacity-50"
+            >
+              Reject
+            </button>
+            <button 
+              disabled={resolving}
+              onClick={() => handleResolve('approve')}
+              className="px-8 py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-green-600/20 transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              {resolving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
+              Force Approve
+            </button>
+          </div>
+        </div>
 
-      <div className="bg-[#0d1117] rounded-[32px] overflow-hidden border border-white/10 h-[calc(100vh-280px)] flex flex-col shadow-2xl">
+        <div className="bg-[#0b0e14] rounded-[40px] overflow-hidden border border-white/10 flex-1 flex flex-col shadow-2xl">
           <SplitViewer 
             isOpen={true} 
             onClose={() => {}} 
             invoiceData={currentItem} 
-            pdfUrl={currentItem.pdf_url}
+            pdfUrl={`https://storage.example.com/mock-invoice-${currentItem.invoice_id}.pdf`}
           />
+        </div>
+
+        <AnimatePresence>
+          {isSuccess && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-12 right-12 bg-green-600 text-white px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-4 font-bold z-[100] border border-green-400/20 backdrop-blur-xl"
+            >
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm">Resolved Successfully</span>
+                <span className="text-[10px] opacity-70 font-medium">Moving to next item...</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-
-      <AnimatePresence>
-        {isSuccess && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed bottom-12 right-12 bg-green-600 text-white px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-3 font-bold z-50 border border-green-400/20"
-          >
-             <CheckCircle2 size={24} />
-             <span>Invoice Resolved Successfully!</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-    </div>
+    </LayoutBase>
   );
 };
 

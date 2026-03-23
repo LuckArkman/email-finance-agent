@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from './Sidebar';
-import NavBar from './NavBar';
 
 interface LayoutBaseProps {
   children: React.ReactNode;
@@ -8,24 +7,13 @@ interface LayoutBaseProps {
 
 const LayoutBase: React.FC<LayoutBaseProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   return (
-    <div className="flex bg-background min-h-screen text-foreground transition-colors duration-300">
+    <div className="flex bg-[#f3f4f6] min-h-screen text-gray-900 overflow-hidden font-body">
       <Sidebar collapsed={collapsed} toggle={() => setCollapsed(!collapsed)} />
       
-      <div className="flex-1 flex flex-col min-w-0">
-        <NavBar darkMode={darkMode} toggleTheme={() => setDarkMode(!darkMode)} />
-        
-        <main className="flex-1 p-8 overflow-y-auto animate-fade-in">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <main className="flex-1 overflow-y-auto no-scrollbar">
           {children}
         </main>
       </div>

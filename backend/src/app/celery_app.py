@@ -11,7 +11,7 @@ class CeleryManager:
             "finance_agent_worker",
             broker=settings.redis_url,
             backend=settings.redis_url,
-            include=["app.tasks.ocr_tasks"]
+            include=["app.tasks.ocr_tasks", "app.tasks.email_tasks"]
         )
         
         # Configure advanced celery settings

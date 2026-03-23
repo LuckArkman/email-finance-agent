@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './views/Login';
+import Register from './views/Register';
 import Dashboard from './views/Dashboard';
 import InvoicesInbox from './views/InvoicesInbox';
-import ResolutionCenter from './views/ResolutionCenter';
-import Reports from './views/Reports';
-import Settings from './views/Settings';
+import PaymentsAgenda from './views/PaymentsAgenda';
+import ReconciliacaoBancaria from './views/ReconciliacaoBancaria';
+import RelatoriosMetricas from './views/RelatoriosMetricas';
+import UniversalInbox from './views/UniversalInbox';
+import EmailLinking from './views/EmailLinking';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -12,6 +15,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route 
           path="/" 
           element={
@@ -29,10 +33,34 @@ function App() {
           } 
         />
         <Route 
-          path="/resolution" 
+          path="/agenda" 
           element={
             <ProtectedRoute>
-              <ResolutionCenter />
+              <PaymentsAgenda />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/reconcile" 
+          element={
+            <ProtectedRoute>
+              <ReconciliacaoBancaria />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/inbox" 
+          element={
+            <ProtectedRoute>
+              <UniversalInbox />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/email-link" 
+          element={
+            <ProtectedRoute>
+              <EmailLinking />
             </ProtectedRoute>
           } 
         />
@@ -40,23 +68,7 @@ function App() {
           path="/analytics" 
           element={
             <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/reports" 
-          element={
-            <ProtectedRoute>
-              <Reports />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <Settings />
+              <RelatoriosMetricas />
             </ProtectedRoute>
           } 
         />

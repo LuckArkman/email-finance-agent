@@ -7,8 +7,41 @@ from app.database import get_db
 from app.models import User
 from app.security import AuthHandler, SecurityDependencies
 
+from app.schemas import UserRegister, UserResponse
+from app.models import User, Tenant
+
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 auth_handler = AuthHandler()
+
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register_user(user_in: UserRegister, db: AsyncSession = Depends(get_db)):
+    """
+    Onboarding: Creates a new Tenant and a User associated with it.
+    """
+    # 1. Check if user already exists
+    result = await db.execute(select(User).where(User.email == user_in.email))
+    if result.scalars().first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The user with this email already exists in the system."
+        )
+
+    # 2. Create Tenant
+    new_tenant = Tenant(name=user_in.tenant_name)
+    db.add(new_tenant)
+    await db.flush() # Get tenant ID
+
+    # 3. Create User
+    new_user = User(
+        email=user_in.email,
+        hashed_password=auth_handler.get_password_hash(user_in.password),
+        tenant_id=new_tenant.id
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+
+    return new_user
 
 @router.post("/access-token")
 async def login_access_token(

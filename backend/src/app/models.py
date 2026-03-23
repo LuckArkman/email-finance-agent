@@ -16,6 +16,16 @@ class InvoiceStatus(enum.Enum):
     OVERDUE = "overdue"
     REVIEW_REQUIRED = "review_required"
 
+class DocumentSource(enum.Enum):
+    EMAIL = "email"
+    WHATSAPP = "whatsapp"
+    MANUAL = "manual"
+
+class DocumentType(enum.Enum):
+    INVOICE = "invoice"
+    RECEIPT = "receipt"
+    OTHER = "other"
+
 def generate_uuid() -> str:
     return str(uuid4())
 
@@ -29,6 +39,7 @@ class Tenant(BaseModel):
     
     users = relationship("User", back_populates="tenant")
     invoices = relationship("InvoiceRecord", back_populates="tenant")
+    email_accounts = relationship("EmailAccount", back_populates="tenant")
 
 class User(BaseModel):
     __tablename__ = "users"
@@ -59,14 +70,64 @@ class InvoiceRecord(BaseModel):
     currency = Column(String, default="BRL")
     
     status = Column(String, default=InvoiceStatus.PENDING.value)
+    source = Column(String, default=DocumentSource.EMAIL.value)
+    document_type = Column(String, default=DocumentType.INVOICE.value)
+    
     confidence_score = Column(Float, default=0.0)
     raw_document_url = Column(String, nullable=True)
+    
+    # Matching/Reconciliation
+    linked_to_id = Column(String, ForeignKey("invoices.id"), nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     tenant = relationship("Tenant", back_populates="invoices")
     payments = relationship("Transaction", back_populates="invoice")
+
+class EmailAccount(BaseModel):
+    """
+    Linked email accounts (Gmail, MS Outlook, Generic IMAP) for the tenant.
+    """
+    __tablename__ = "email_accounts"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
+    
+    provider = Column(String, nullable=False) # gmail, outlook, imap
+    email_address = Column(String, nullable=False)
+    
+    # Store access tokens or credentials securely (mocked for this version)
+    access_token = Column(Text, nullable=True)
+    refresh_token = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    
+    last_synced_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    tenant = relationship("Tenant", back_populates="email_accounts")
+    emails = relationship("EmailMessage", back_populates="account")
+
+class EmailMessage(BaseModel):
+    """
+    Persistence for synced email headers before/after extraction.
+    """
+    __tablename__ = "email_messages"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
+    account_id = Column(String, ForeignKey("email_accounts.id"), nullable=False)
+    
+    subject = Column(String, nullable=True)
+    sender = Column(String, nullable=True)
+    snippet = Column(Text, nullable=True)
+    category = Column(String, default="Non-Financial") # Accounts Payable, Receipt, etc.
+    date = Column(DateTime, default=datetime.utcnow)
+    
+    is_processed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    account = relationship("EmailAccount", back_populates="emails")
 
 class Transaction(BaseModel):
     __tablename__ = "transactions"

@@ -27,7 +27,21 @@ const SplitViewer: React.FC<SplitViewerProps> = ({ isOpen, onClose, invoiceData,
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
-  const [formData] = useState(invoiceData);
+  const [formData, setFormData] = useState<any>(invoiceData);
+
+  React.useEffect(() => {
+    setFormData(invoiceData);
+  }, [invoiceData]);
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  };
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -140,8 +154,8 @@ const SplitViewer: React.FC<SplitViewerProps> = ({ isOpen, onClose, invoiceData,
                     {/* Form Fields */}
                     {[
                       { label: 'Vendor Name', key: 'vendor_name', value: formData.vendor_name },
-                      { label: 'Invoice Number', key: 'invoice_number', value: formData.invoice_number || 'INV-9921' },
-                      { label: 'Issue Date', key: 'issue_date', value: formData.issue_date },
+                      { label: 'Invoice Number', key: 'invoice_number', value: formData.invoice_number || 'N/A' },
+                      { label: 'Issue Date', key: 'issue_date', value: formatDate(formData.issue_date) },
                       { label: 'Total Amount', key: 'total_amount', value: `$ ${formData.total_amount?.toFixed(2)}` },
                     ].map((field) => (
                       <div key={field.key} className="space-y-2 group">
@@ -164,10 +178,12 @@ const SplitViewer: React.FC<SplitViewerProps> = ({ isOpen, onClose, invoiceData,
                   <div className="glass p-6 rounded-3xl border-blue-500/10">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs text-gray-400">LLM Prediction Accuracy</span>
-                      <span className="text-sm font-bold text-green-500">98.4%</span>
+                      <span className={`text-sm font-bold ${formData.confidence_score > 0.9 ? 'text-green-500' : 'text-yellow-500'}`}>
+                        {(formData.confidence_score * 100).toFixed(1)}%
+                      </span>
                     </div>
                     <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)]" style={{ width: '98%' }} />
+                      <div className={`h-full ${formData.confidence_score > 0.9 ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]'}`} style={{ width: `${formData.confidence_score * 100}%` }} />
                     </div>
                   </div>
                </div>
