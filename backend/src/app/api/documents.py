@@ -29,35 +29,32 @@ async def upload_document(
     """
     tenant_id = get_current_tenant()
     
-    # Save the file locally
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    # Real flow: Save the file and dispatch task
+    file_path = f"{UPLOAD_DIR}/{file.filename}"
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # Mock OCR Extraction Logic
-    is_receipt = "recibo" in file.filename.lower() or "comprovante" in file.filename.lower()
-    doc_type = DocumentType.RECEIPT.value if is_receipt else DocumentType.INVOICE.value
-    
-    # Simulate finding some common vendors from the images
-    vendors = ["EDP Comercial", "Worten Equipamentos", "Águas do Porto", "Detergentes PT", "Uber Ride", "AWS"]
-    vendor_name = random.choice(vendors)
-    amount = round(random.uniform(10.0, 500.0), 2)
-    
+    # Create the db record in PENDING state
     new_doc = InvoiceRecord(
         tenant_id=tenant_id,
-        vendor_name=vendor_name,
-        total_amount=amount,
-        issue_date=datetime.utcnow(),
-        status=InvoiceStatus.PENDING.value,
+        vendor_name="Pendente...", # Will be updated by IA
+        total_amount=0.0,
+        status=InvoiceStatus.PROCESSING.value, # Changed from PENDING to PROCESSING during task
         source=DocumentSource.MANUAL.value,
-        document_type=doc_type,
-        confidence_score=random.uniform(0.85, 0.99),
-        raw_document_url=f"/api/v1/documents/view/{file.filename}"
+        raw_document_url=file_path # Local path for the worker
     )
     
     db.add(new_doc)
     await db.commit()
     await db.refresh(new_doc)
+    
+    # 3. Dispatch AI Task
+    from app.tasks.ocr_tasks import enqueue_ocr_job
+    enqueue_ocr_job.delay(
+        document_url=file_path, 
+        invoice_id=new_doc.id, 
+        tenant_id=tenant_id
+    )
     
     # Cross-Reference (Agent Intelligence)
     # Find a corresponding invoice if this is a receipt

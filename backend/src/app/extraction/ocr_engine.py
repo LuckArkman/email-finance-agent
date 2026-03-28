@@ -77,9 +77,28 @@ class LocalOCREngine:
             raise ValueError(f"Unknown OCR type: {engine_type}")
 
     async def extract_text_content(self, image_path: str) -> str:
-        """Assíncrona para extração de String text evitando travas no backend."""
+        """Assíncrona para extração de String text evitando travas no backend. Suporta PDF e Imagens."""
         loop = asyncio.get_event_loop()
-        # Because OCR is CPU-heavy and blocking, we run in executor.
+        
+        # Support PDF by converting pages to images
+        if image_path.lower().endswith(".pdf"):
+            print(f"Detectado PDF. Convertendo para imagens para OCR: {image_path}")
+            from app.processing.pdf_utils import DocumentSplitter
+            splitter = DocumentSplitter()
+            # Converte PDF para lista de caminhos de imagens PNG
+            image_paths = await loop.run_in_executor(None, splitter.convert_pdf_to_images, image_path)
+            
+            # Executa OCR em cada página sequencialmente (ou paralelo se preferir)
+            all_text = []
+            for img_p in image_paths:
+                page_text = await loop.run_in_executor(None, self.adapter.extract_text, img_p)
+                all_text.append(page_text)
+                # Opcional: remover imagem temporária após OCR
+                os.remove(img_p)
+            
+            return "\n--- NOVA PÁGINA PDF ---\n".join(all_text)
+            
+        # Standard Image processing
         raw_text = await loop.run_in_executor(None, self.adapter.extract_text, image_path)
         return raw_text
         

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -8,12 +8,32 @@ import {
   TrendingDown,
   LayoutGrid,
   Filter,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react';
 import LayoutBase from '../components/LayoutBase';
+import api from '../services/api';
 
 const PaymentsAgenda: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchInvoices = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/invoices?limit=100');
+      setInvoices(res.data.data || []);
+    } catch (err) {
+      console.error("Failed to fetch invoices", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
   const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
@@ -25,12 +45,23 @@ const PaymentsAgenda: React.FC = () => {
   for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
   for (let i = 1; i <= daysInMonth(year, currentDate.getMonth()); i++) days.push(i);
 
-  // Mock payments
-  const payments = [
-    { day: 15, vendor: 'EDP', amount: '€145,20', status: 'pending' },
-    { day: 22, vendor: 'Aluguer', amount: '€1,200,00', status: 'paid' },
-    { day: 28, vendor: 'AWS', amount: '€450,00', status: 'overdue' },
-  ];
+  // Map invoices to payments for the calendar
+  const payments = invoices.map(inv => ({
+    day: inv.due_date ? new Date(inv.due_date).getDate() : null,
+    month: inv.due_date ? new Date(inv.due_date).getMonth() : null,
+    year: inv.due_date ? new Date(inv.due_date).getFullYear() : null,
+    vendor: inv.vendor_name,
+    amount: `€${inv.total_amount?.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}`,
+    status: inv.status
+  })).filter(p => p.day !== null && p.month === currentDate.getMonth() && p.year === currentDate.getFullYear());
+
+  const totalToPay = invoices
+    .filter(inv => inv.status !== 'paid')
+    .reduce((acc, inv) => acc + (inv.total_amount || 0), 0);
+    
+  const overdueAmount = invoices
+    .filter(inv => inv.status === 'overdue' || (inv.status !== 'paid' && inv.due_date && new Date(inv.due_date) < new Date()))
+    .reduce((acc, inv) => acc + (inv.total_amount || 0), 0);
 
   return (
     <LayoutBase>
@@ -51,7 +82,15 @@ const PaymentsAgenda: React.FC = () => {
               </div>
            </div>
 
-           <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden p-8">
+           <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden p-8 relative min-h-[500px]">
+              {loading && (
+                <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-[40px]">
+                   <div className="flex flex-col items-center space-y-4">
+                      <Loader2 className="animate-spin text-blue-600" size={48} />
+                      <p className="text-sm font-black text-gray-900 uppercase tracking-widest">Sincronizando Agenda...</p>
+                   </div>
+                </div>
+              )}
               <div className="grid grid-cols-7 mb-4">
                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
                    <div key={d} className="text-center text-[10px] font-extrabold text-gray-400 uppercase tracking-widest py-4">{d}</div>
@@ -59,17 +98,19 @@ const PaymentsAgenda: React.FC = () => {
               </div>
               <div className="grid grid-cols-7 gap-4">
                  {days.map((day, idx) => {
-                   const payment = payments.find(p => p.day === day);
+                   const dailyPayments = payments.filter(p => p.day === day);
                    return (
-                     <div key={idx} className={`aspect-square rounded-3xl p-4 transition-all border ${day ? 'bg-gray-50/50 border-gray-50' : 'border-transparent'} ${payment ? 'ring-2 ring-blue-500/20 bg-white border-blue-100' : ''}`}>
+                     <div key={idx} className={`aspect-square rounded-3xl p-4 transition-all border ${day ? 'bg-gray-50/50 border-gray-50' : 'border-transparent'} ${dailyPayments.length > 0 ? 'ring-2 ring-blue-500/20 bg-white border-blue-100' : ''}`}>
                         {day && (
                           <div className="flex flex-col h-full">
-                             <span className={`text-[14px] font-black ${payment ? 'text-blue-600' : 'text-gray-400'}`}>{day}</span>
-                             {payment && (
-                               <div className="mt-auto space-y-1">
-                                  <p className="text-[10px] font-black text-gray-900 truncate">{payment.vendor}</p>
-                                  <p className="text-[10px] text-gray-500 font-bold">{payment.amount}</p>
+                             <span className={`text-[12px] font-black ${dailyPayments.length > 0 ? 'text-blue-600' : 'text-gray-400'}`}>{day}</span>
+                             {dailyPayments.slice(0, 2).map((p, i) => (
+                               <div key={i} className="mt-1">
+                                  <p className="text-[9px] font-black text-gray-900 truncate">{p.vendor}</p>
                                </div>
+                             ))}
+                             {dailyPayments.length > 2 && (
+                               <p className="text-[8px] font-bold text-blue-400">+{dailyPayments.length - 2} mais</p>
                              )}
                           </div>
                         )}
@@ -88,19 +129,19 @@ const PaymentsAgenda: React.FC = () => {
                  <SummaryCard 
                    icon={<DollarSign size={20} />} 
                    label="Total a Pagar" 
-                   value="€4.250,00" 
+                   value={`€${totalToPay.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}`} 
                    color="blue" 
                  />
                  <SummaryCard 
                    icon={<AlertTriangle size={20} />} 
                    label="Em atraso" 
-                   value="€145,20" 
+                   value={`€${overdueAmount.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}`} 
                    color="red" 
                  />
                  <SummaryCard 
                    icon={<TrendingDown size={20} />} 
                    label="Previsão Fluxo" 
-                   value="-€850,00" 
+                   value="-€0,00" 
                    color="orange" 
                  />
               </div>
@@ -112,7 +153,10 @@ const PaymentsAgenda: React.FC = () => {
                  <LayoutGrid size={16} className="text-gray-300 pointer-events-none" />
               </div>
               <div className="space-y-4">
-                 {payments.map((p, i) => (
+                 {payments.length === 0 && !loading && (
+                   <div className="text-center py-10 opacity-30 italic text-sm">Nenhuma conta agendada.</div>
+                 )}
+                 {payments.slice(0, 5).map((p, i) => (
                    <div key={i} className="flex items-center space-x-4 group cursor-pointer hover:bg-gray-50 p-2 rounded-2xl transition-all">
                       <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center font-black text-gray-900 shadow-sm border border-gray-200 group-hover:bg-white group-hover:border-blue-100">
                          {p.day}

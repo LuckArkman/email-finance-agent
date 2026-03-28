@@ -8,6 +8,7 @@ import ReconciliacaoBancaria from './views/ReconciliacaoBancaria';
 import RelatoriosMetricas from './views/RelatoriosMetricas';
 import UniversalInbox from './views/UniversalInbox';
 import EmailLinking from './views/EmailLinking';
+import AgentChat from './views/AgentChat';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -21,6 +22,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/chat" 
+          element={
+            <ProtectedRoute>
+              <AgentChat />
             </ProtectedRoute>
           } 
         />

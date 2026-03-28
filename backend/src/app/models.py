@@ -79,11 +79,49 @@ class InvoiceRecord(BaseModel):
     # Matching/Reconciliation
     linked_to_id = Column(String, ForeignKey("invoices.id"), nullable=True)
     
+    # Granular Financials
+    iban = Column(String, nullable=True)
+    swift = Column(String, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     tenant = relationship("Tenant", back_populates="invoices")
     payments = relationship("Transaction", back_populates="invoice")
+    line_items = relationship("LineItem", back_populates="invoice", cascade="all, delete-orphan")
+
+class LineItem(BaseModel):
+    __tablename__ = "invoice_line_items"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    invoice_id = Column(String, ForeignKey("invoices.id"), nullable=False)
+    
+    description = Column(String, nullable=False)
+    quantity = Column(Float, default=1.0)
+    unit_price = Column(Float, default=0.0)
+    total_price = Column(Float, default=0.0)
+    
+    invoice = relationship("InvoiceRecord", back_populates="line_items")
+
+class AuditLog(BaseModel):
+    """
+    Immutable audit trail for every action performed within the tenant context.
+    Essential for financial compliance and fraud detection.
+    """
+    __tablename__ = "audit_logs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"), nullable=True) # System actions might have null user
+    
+    action = Column(String, nullable=False) # e.g. "INVOICE_EDIT", "DOC_UPLOAD", "AUTH_LOGIN"
+    resource_type = Column(String, nullable=False) # "invoice", "user", "tenant"
+    resource_id = Column(String, nullable=True)
+    
+    details = Column(Text, nullable=True) # JSON blob or description of changes
+    ip_address = Column(String, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class EmailAccount(BaseModel):
     """
