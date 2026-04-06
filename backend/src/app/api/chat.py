@@ -26,10 +26,10 @@ async def chat_with_agent_brain(request: ChatRequest = Body(...)):
     llm = LLMExtractorClient()
     
     # 1. Prepare messages for Langchain
-    # We inject the Brain Persona as the System Message
-    system_prompt = PromptManager.build_agent_brain_prompt().messages[0].prompt.template
+    # We inject the specialized Chat Persona as the System Message
+    chat_system_prompt = PromptManager.build_chat_persona_prompt()
     
-    langchain_messages = [SystemMessage(content=system_prompt)]
+    langchain_messages = [SystemMessage(content=chat_system_prompt)]
     
     for msg in request.messages:
         if msg.role == "user":

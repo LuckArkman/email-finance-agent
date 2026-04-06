@@ -119,7 +119,7 @@ def enqueue_ocr_job(self, document_url: str, invoice_id: str, tenant_id: str = "
             invoice.currency = extracted_data.currency
             invoice.iban = extracted_data.iban
             invoice.swift = extracted_data.swift
-            invoice.status = InvoiceStatus.PAID.value if extracted_data.is_valid_invoice else "REJECTED"
+            invoice.status = InvoiceStatus.PENDING.value if extracted_data.is_valid_invoice else InvoiceStatus.REVIEW_REQUIRED.value
             invoice.confidence_score = confidence
             invoice.document_type = "invoice" if extracted_data.is_valid_invoice else "other"
             

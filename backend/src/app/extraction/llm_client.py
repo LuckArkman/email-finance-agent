@@ -45,7 +45,7 @@ class LLMExtractorClient:
     into structured Pydantic models using OpenAI's Function Calling (Instructor)
     or Langchain core tools.
     """
-    def __init__(self, model_name: str = "llama3", temperature: float = 0.0):
+    def __init__(self, model_name: str = "llama3:latest", temperature: float = 0.0):
         self.settings = BaseAPIConfig.get_settings()
         self.api_key = self.settings.openai_api_key
         self.ollama_base_url = self.settings.ollama_base_url
@@ -56,7 +56,8 @@ class LLMExtractorClient:
             self.llm = ChatOllama(
                 model=model_name,
                 temperature=temperature,
-                base_url=self.ollama_base_url
+                base_url=self.ollama_base_url,
+                timeout=180
             )
         else:
             print(f"Initializing LLMExtractor with OpenAI {model_name}")

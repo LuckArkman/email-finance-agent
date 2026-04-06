@@ -155,6 +155,7 @@ class EmailMessage(BaseModel):
     id = Column(String, primary_key=True, default=generate_uuid)
     tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
     account_id = Column(String, ForeignKey("email_accounts.id"), nullable=False)
+    external_message_id = Column(String, nullable=True, index=True)
     
     subject = Column(String, nullable=True)
     sender = Column(String, nullable=True)
@@ -171,12 +172,15 @@ class Transaction(BaseModel):
     __tablename__ = "transactions"
 
     id = Column(String, primary_key=True, default=generate_uuid)
+    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
     invoice_id = Column(String, ForeignKey("invoices.id"), nullable=True)
     
+    description = Column(String, nullable=True) # e.g. "PAG. EDP COMERCIAL SA"
     amount = Column(Float, nullable=False)
     payment_date = Column(DateTime, default=datetime.utcnow)
     reference_id = Column(String, nullable=True)
     
+    is_reconciled = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     invoice = relationship("InvoiceRecord", back_populates="payments")

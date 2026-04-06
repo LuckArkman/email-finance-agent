@@ -65,6 +65,9 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
     volumes:
       - tmp_uploads:/tmp/uploads
+      - ./backend/src:/app/src
+      - ./backend/start.sh:/app/start.sh
+      - ./backend/entrypoint.sh:/app/entrypoint.sh
     command: ["/app/start.sh"]
     restart: unless-stopped
     depends_on:
@@ -90,6 +93,7 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
     volumes:
       - tmp_uploads:/tmp/uploads
+      - ./backend/src:/app/src
     command: ["/app/src/start-celery.sh"]
     depends_on:
       - redis
