@@ -59,6 +59,28 @@ class ReviewItemResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class TransactionResponse(BaseModel):
+    id: str
+    tenant_id: str
+    invoice_id: Optional[str] = None
+    description: Optional[str] = None
+    amount: float
+    payment_date: datetime
+    is_reconciled: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class AISuggestion(BaseModel):
+    id: str
+    transaction_id: str
+    invoice_id: str
+    confidence: float
+    vendor_name: str
+    document_name: str
+    amount: float
+
 class ReviewResolveRequest(BaseModel):
     action: str # approve, reject
     notes: Optional[str] = None

@@ -83,18 +83,24 @@ def create_fastapi_app() -> FastAPI:
         return Response(content=content, media_type=media_type)
 
     from app.ingestion.webhooks import router as ingestion_router
+    from app.ingestion.whatsapp import router as whatsapp_router
     from app.api.auth import router as auth_router
     from app.api.invoices import router as invoices_router
     from app.api.analytics import router as analytics_router
     from app.api.websockets import router as websockets_router
     from app.api.settings import router as settings_router
     from app.api.emails import router as emails_router
+    from app.api.reconciliation import router as reconciliation_router
+    from app.api.chat import router as chat_router
     from app.api.review import router as review_router
     from app.api.documents import router as documents_router
 
+    app.include_router(chat_router)
     app.include_router(ingestion_router)
+    app.include_router(whatsapp_router)
     app.include_router(auth_router)
     app.include_router(invoices_router)
+    app.include_router(reconciliation_router)
     app.include_router(analytics_router)
     app.include_router(websockets_router)
     app.include_router(settings_router)

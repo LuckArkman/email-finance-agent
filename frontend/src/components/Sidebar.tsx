@@ -30,6 +30,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggle }) => {
   
   const sections = [
     {
+      title: 'INTELIGÊNCIA',
+      items: [
+        { name: 'Conversar com IA', icon: <MessageCircle size={18} />, path: '/chat' },
+      ]
+    },
+    {
       title: 'PLATAFORMA',
       items: [
         { name: 'Dashboard', icon: <Inbox size={18} />, path: '/' },
