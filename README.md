@@ -47,4 +47,4 @@ kubectl apply -f k8s/
 - [Relatório de Stress Test](file:///C:/Users/MPLopes/.gemini/antigravity/brain/f6a9c627-d511-481b-b4a4-d5c722912fde/stress_test_report.md)
 
 ---
-*Desenvolvido por Antigravity AI para o projeto LuckArkman.*
+*Desenvolvido por LuckArkman.*
