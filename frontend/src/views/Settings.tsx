@@ -8,11 +8,16 @@ import {
   CheckCircle2,
   Lock,
   Zap,
-  RefreshCw
+  RefreshCw,
+  MessageCircle,
+  QrCode,
+  X,
+  Smartphone
 } from 'lucide-react';
 import api from '../services/api';
 import LayoutBase from '../components/LayoutBase';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 
 const SettingsView: React.FC = () => {
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -20,6 +25,12 @@ const SettingsView: React.FC = () => {
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // WhatsApp States
+  const [waStatus, setWaStatus] = useState<'disconnected' | 'connecting' | 'qr' | 'connected'>('disconnected');
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState<any>(null);
 
   useEffect(() => {
     // Fetch current settings
@@ -36,7 +47,64 @@ const SettingsView: React.FC = () => {
       }
     };
     fetchSettings();
+    checkWhatsAppStatus();
   }, []);
+
+  const checkWhatsAppStatus = async () => {
+    try {
+      // Baileys bridge is running on port 3001, but in production it should be proxied
+      // For local dev, we hit localhost:3001
+      const res = await axios.get('http://localhost:3001/status');
+      setWaStatus(res.data.status);
+    } catch (err) {
+      console.log('Baileys bridge not reachable', err);
+      setWaStatus('disconnected');
+    }
+  };
+
+  const handleConnectWhatsApp = () => {
+    setShowQrModal(true);
+    pollForQr();
+  };
+
+  const handleDisconnectWhatsApp = async () => {
+    try {
+      await axios.post('http://localhost:3001/disconnect');
+      setWaStatus('disconnected');
+      setQrCodeData(null);
+    } catch (err) {
+      console.error('Failed to disconnect', err);
+    }
+  };
+
+  const pollForQr = () => {
+    if (pollingInterval) clearInterval(pollingInterval);
+    
+    const interval = setInterval(async () => {
+      try {
+        const res = await axios.get('http://localhost:3001/qr');
+        setWaStatus(res.data.status);
+        if (res.data.qr) {
+          setQrCodeData(res.data.qr);
+        }
+        if (res.data.status === 'connected') {
+          clearInterval(interval);
+          setShowQrModal(false);
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 3000);
+        }
+      } catch (err) {
+        // Wait or handle error silently while polling
+      }
+    }, 2000);
+    setPollingInterval(interval);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) clearInterval(pollingInterval);
+    };
+  }, [pollingInterval]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +220,113 @@ const SettingsView: React.FC = () => {
               </div>
             </form>
           </div>
+
+          {/* WhatsApp Baileys Integration Section */}
+          <div className="glass p-8 rounded-[32px] border border-white/5 shadow-2xl space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-green-600/10 flex items-center justify-center text-green-500">
+                  <MessageCircle size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Integração WhatsApp</h3>
+                  <p className="text-sm text-gray-500">Conecte sua conta via QR Code (Baileys) para receber faturas.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full border border-white/5 bg-white/5">
+                {waStatus === 'connected' ? (
+                  <span className="text-green-500 flex items-center gap-2"><CheckCircle2 size={14} /> Conectado</span>
+                ) : waStatus === 'connecting' || waStatus === 'qr' ? (
+                  <span className="text-yellow-500 flex items-center gap-2"><RefreshCw size={14} className="animate-spin" /> Conectando...</span>
+                ) : (
+                  <span className="text-red-500 flex items-center gap-2"><Lock size={14} /> Desconectado</span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-[#0d1117] border border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`p-4 rounded-full ${waStatus === 'connected' ? 'bg-green-500/10 text-green-500' : 'bg-gray-800 text-gray-500'}`}>
+                  <Smartphone size={24} />
+                </div>
+                <div>
+                  <h4 className="text-white font-bold">{waStatus === 'connected' ? 'WhatsApp Ativo' : 'WhatsApp Desconectado'}</h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {waStatus === 'connected' 
+                      ? 'O agente está a escutar imagens de faturas.' 
+                      : 'Ligue o telemóvel para ativar a extração OCR via WhatsApp.'}
+                  </p>
+                </div>
+              </div>
+
+              {waStatus === 'connected' ? (
+                <button 
+                  onClick={handleDisconnectWhatsApp}
+                  className="px-6 py-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold rounded-xl transition-all text-sm"
+                >
+                  Desconectar
+                </button>
+              ) : (
+                <button 
+                  onClick={handleConnectWhatsApp}
+                  className="px-6 py-3 bg-green-500 text-black hover:bg-green-400 font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
+                >
+                  <QrCode size={18} />
+                  Conectar Aparelho
+                </button>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* QR Code Modal Overlay */}
+        <AnimatePresence>
+          {showQrModal && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-[#1a1f2e] p-8 rounded-[40px] border border-white/10 max-w-sm w-full relative flex flex-col items-center shadow-2xl"
+              >
+                <button 
+                  onClick={() => {
+                    setShowQrModal(false);
+                    if (pollingInterval) clearInterval(pollingInterval);
+                  }}
+                  className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
+                >
+                  <X size={24} />
+                </button>
+
+                <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mb-6">
+                  <MessageCircle size={32} />
+                </div>
+
+                <h3 className="text-2xl font-black text-white text-center mb-2">Conectar WhatsApp</h3>
+                <p className="text-sm text-gray-400 text-center mb-8">
+                  Abra o WhatsApp no telemóvel &gt; Dispositivos Associados &gt; Associar Dispositivo e escaneie o código abaixo.
+                </p>
+
+                <div className="bg-white p-4 rounded-3xl w-64 h-64 flex items-center justify-center relative overflow-hidden">
+                  {qrCodeData ? (
+                    <img src={qrCodeData} alt="WhatsApp QR Code" className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center space-y-4 text-gray-400">
+                      <RefreshCw className="animate-spin" size={32} />
+                      <span className="text-xs font-bold uppercase tracking-widest">A gerar código...</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {showSuccess && (

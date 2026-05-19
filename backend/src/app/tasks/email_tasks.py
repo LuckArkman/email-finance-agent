@@ -355,9 +355,17 @@ async def _sync_logic(account_id: str):
             await db.rollback()
 
 
+def _run_async(coro):
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
+
 @celery_app.task
 def sync_email_account_task(account_id: str):
     """
     Synchronizes a linked email account and stores inbox messages locally.
     """
-    asyncio.run(_sync_logic(account_id))
+    _run_async(_sync_logic(account_id))

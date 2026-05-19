@@ -134,13 +134,18 @@ const EmailLinking: React.FC = () => {
                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-blue-500 transition-colors" size={24} />
                     <input
                       type="email"
-                      placeholder="exemplo@empresa.com"
+                      placeholder={selectedProvider === 'google' ? 'mario.2023ia@gmail.com' : 'exemplo@empresa.com'}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={loading || success}
                       className="w-full h-16 bg-gray-50 border border-gray-100 rounded-[28px] pl-16 pr-6 font-bold text-lg text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/20 outline-none transition-all placeholder:text-gray-300 shadow-inner disabled:opacity-50"
                     />
                   </div>
+                  {!email && (
+                    <p className="text-xs text-amber-600 font-semibold pl-2 flex items-center gap-1">
+                      ⚠️ Digite o endereço de email acima para ativar o botão de sincronização.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-gray-50">
