@@ -88,7 +88,7 @@ def _provider_auth_url(provider: str, email: str, user: User) -> str:
             "scope": "openid email profile https://www.googleapis.com/auth/gmail.readonly",
             "access_type": "offline",
             "prompt": "consent",
-            "include_granted_scopes": "false",  # Forces fresh scope selection screen
+            "include_granted_scopes": "true",
             "login_hint": email,
             "state": state,
         }

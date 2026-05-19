@@ -43,7 +43,8 @@ class OCRTaskHandler(Task):
                 f"• *Status:* Registado e Reconciliado.\n\n"
                 f"Pode consultar os detalhes no seu Dashboard."
             )
-            asyncio.run(WhatsAppMessagingService.send_text_message(to=tenant_id, text=message))
+            # asyncio.run(WhatsAppMessagingService.send_text_message(to=tenant_id, text=message))
+            print(f"WhatsApp notification intended for {tenant_id} (Baileys outbound not yet implemented)")
         
         # 1. Lookup Customizable Webhook URL in Database
         db = SessionLocal()

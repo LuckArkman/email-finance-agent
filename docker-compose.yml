@@ -113,8 +113,27 @@ services:
     #   - backend
     restart: unless-stopped
 
+  baileys_bridge:
+    build:
+      context: ./baileys-bridge
+      dockerfile: Dockerfile
+    container_name: efa_baileys_bridge
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - BACKEND_URL=http://backend:8000
+      - AUTH_DIR=/app/auth_sessions
+      - UPLOAD_DIR=/tmp/uploads
+    volumes:
+      - tmp_uploads:/tmp/uploads
+      - baileys_auth:/app/auth_sessions
+    restart: unless-stopped
+
+
 volumes:
   postgres_data:
   mongo_data:
   ollama_data:
   tmp_uploads:
+  baileys_auth:
