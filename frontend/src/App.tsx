@@ -9,6 +9,7 @@ import RelatoriosMetricas from './views/RelatoriosMetricas';
 import UniversalInbox from './views/UniversalInbox';
 import EmailLinking from './views/EmailLinking';
 import AgentChat from './views/AgentChat';
+import SettingsView from './views/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -78,6 +79,22 @@ function App() {
           element={
             <ProtectedRoute>
               <RelatoriosMetricas />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/whatsapp" 
+          element={
+            <ProtectedRoute>
+              <SettingsView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <SettingsView />
             </ProtectedRoute>
           } 
         />
