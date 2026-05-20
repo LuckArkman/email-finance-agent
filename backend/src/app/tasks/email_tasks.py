@@ -95,6 +95,7 @@ async def _store_email_record(
             subject=subject,
             sender=sender,
             snippet=snippet,
+            body=body_text,
             category=_classify_email(subject, body_text, sender),
             date=received_at,
             is_processed=False,
@@ -104,6 +105,7 @@ async def _store_email_record(
         email_message.subject = subject
         email_message.sender = sender
         email_message.snippet = snippet
+        email_message.body = body_text
         email_message.category = _classify_email(subject, body_text, sender)
         email_message.date = received_at
 
@@ -148,6 +150,25 @@ async def _create_invoice_if_needed(db, account: EmailAccount, email_message: Em
             invoice.total_amount = amount
 
 
+def _parse_email_body(msg) -> str:
+    body_text = ""
+    if msg.is_multipart():
+        for part in msg.walk():
+            content_type = part.get_content_type()
+            content_disposition = str(part.get("Content-Disposition"))
+            if content_type == "text/plain" and "attachment" not in content_disposition:
+                try:
+                    body_text += part.get_payload(decode=True).decode(errors="ignore")
+                except Exception:
+                    pass
+    else:
+        try:
+            body_text = msg.get_payload(decode=True).decode(errors="ignore")
+        except Exception:
+            body_text = ""
+    return body_text
+
+
 async def _sync_google_account(db, account: EmailAccount):
     settings = BaseAPIConfig.get_settings()
     creds = Credentials(
@@ -164,29 +185,41 @@ async def _sync_google_account(db, account: EmailAccount):
         account.access_token = creds.token
 
     service = build("gmail", "v1", credentials=creds)
-    response = service.users().messages().list(userId="me", maxResults=25, q="in:inbox").execute()
+    response = service.users().messages().list(userId="me", maxResults=500, q="in:inbox").execute()
     messages = response.get("messages", [])
 
     for item in messages:
-        message = service.users().messages().get(
-            userId="me",
-            id=item["id"],
-            format="metadata",
-            metadataHeaders=["Subject", "From", "Date"],
-        ).execute()
+        try:
+            message = service.users().messages().get(
+                userId="me",
+                id=item["id"],
+                format="raw",
+            ).execute()
+        except Exception:
+            continue
 
-        headers = {h["name"].lower(): h["value"] for h in message.get("payload", {}).get("headers", [])}
-        subject = _decode_header_value(headers.get("subject"))
-        sender = _decode_header_value(headers.get("from"))
-        date_header = headers.get("date")
+        raw_email = message.get("raw")
+        if not raw_email:
+            continue
+            
+        import base64
+        from email import message_from_bytes
+        msg_bytes = base64.urlsafe_b64decode(raw_email + "=" * (4 - len(raw_email) % 4))
+        msg = message_from_bytes(msg_bytes)
+
+        subject = _decode_header_value(msg.get("Subject"))
+        sender = _decode_header_value(msg.get("From")) or account.email_address
+        date_str = msg.get("Date")
         received_at = datetime.utcnow()
-        if date_header:
+        if date_str:
             try:
-                received_at = parsedate_to_datetime(date_header).replace(tzinfo=None)
+                received_at = parsedate_to_datetime(date_str).replace(tzinfo=None)
             except Exception:
                 pass
 
-        snippet = _extract_snippet(message.get("snippet", ""))
+        body_text = _parse_email_body(msg)
+        snippet = _extract_snippet(body_text or subject)
+        
         email_message = await _store_email_record(
             db,
             account,
@@ -194,9 +227,10 @@ async def _sync_google_account(db, account: EmailAccount):
             subject=subject or "No Subject",
             sender=sender or account.email_address,
             snippet=snippet,
-            body_text=snippet,
+            body_text=body_text,
             received_at=received_at,
         )
+        email_message.body = body_text
         await _create_invoice_if_needed(db, account, email_message, snippet, received_at)
 
 
@@ -228,7 +262,7 @@ async def _sync_outlook_account(db, account: EmailAccount):
             "Accept": "application/json",
         }
         response = await client.get(
-            "https://graph.microsoft.com/v1.0/me/messages?$top=25&$orderby=receivedDateTime desc",
+            "https://graph.microsoft.com/v1.0/me/messages?$top=500&$orderby=receivedDateTime desc",
             headers=headers,
         )
         response.raise_for_status()
@@ -245,6 +279,19 @@ async def _sync_outlook_account(db, account: EmailAccount):
                     pass
 
             snippet = _extract_snippet(message.get("bodyPreview", ""))
+            body_text = message.get("body", {}).get("content", "")
+            
+            # Use BeautifulSoup to strip HTML tags if present (since Outlook returns HTML body by default)
+            if body_text and "<" in body_text and ">" in body_text:
+                try:
+                    from bs4 import BeautifulSoup
+                    body_text = BeautifulSoup(body_text, "html.parser").get_text(separator="\n", strip=True)
+                except ImportError:
+                    pass
+            
+            if not body_text:
+                body_text = snippet
+
             email_message = await _store_email_record(
                 db,
                 account,
@@ -252,7 +299,7 @@ async def _sync_outlook_account(db, account: EmailAccount):
                 subject=subject,
                 sender=sender,
                 snippet=snippet,
-                body_text=snippet,
+                body_text=body_text,
                 received_at=received_at,
             )
             await _create_invoice_if_needed(db, account, email_message, snippet, received_at)
@@ -276,7 +323,7 @@ async def _sync_imap_account(db, account: EmailAccount):
 
     status, messages = mail.search(None, "ALL")
     email_ids = messages[0].split() if status == "OK" and messages and messages[0] else []
-    recent_ids = email_ids[-15:] if len(email_ids) > 15 else email_ids
+    recent_ids = email_ids[-500:] if len(email_ids) > 500 else email_ids
 
     for e_id in reversed(recent_ids):
         res, msg_data = mail.fetch(e_id, "(RFC822)")

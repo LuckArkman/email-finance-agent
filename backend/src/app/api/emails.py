@@ -250,6 +250,7 @@ async def list_linked_accounts(
     return result.scalars().all()
 
 
+
 @router.get("/inbox", response_model=List[SimpleEmailDTO])
 async def list_inbox_emails(
     db: AsyncSession = Depends(get_db),
@@ -269,6 +270,7 @@ async def list_inbox_emails(
             date=msg.date.strftime("%Y-%m-%d %H:%M") if msg.date else "N/A",
             category=msg.category or "Non-Financial",
             snippet=msg.snippet or "",
+            body=msg.body or msg.snippet or "",
         )
         for msg in messages
     ]

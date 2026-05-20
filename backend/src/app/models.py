@@ -160,6 +160,7 @@ class EmailMessage(BaseModel):
     subject = Column(String, nullable=True)
     sender = Column(String, nullable=True)
     snippet = Column(Text, nullable=True)
+    body = Column(Text, nullable=True)
     category = Column(String, default="Non-Financial") # Accounts Payable, Receipt, etc.
     date = Column(DateTime, default=datetime.utcnow)
     
