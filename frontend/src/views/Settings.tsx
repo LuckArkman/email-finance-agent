@@ -12,7 +12,11 @@ import {
   MessageCircle,
   QrCode,
   X,
-  Smartphone
+  Smartphone,
+  Percent,
+  Building2,
+  Globe,
+  Euro
 } from 'lucide-react';
 import api from '../services/api';
 import LayoutBase from '../components/LayoutBase';
@@ -26,6 +30,13 @@ const SettingsView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Fiscal Settings
+  const [ivaRate, setIvaRate] = useState(0.23);
+  const [currency, setCurrency] = useState('EUR');
+  const [fiscalName, setFiscalName] = useState('');
+  const [fiscalCountry, setFiscalCountry] = useState('PT');
+  const [fiscalLoading, setFiscalLoading] = useState(false);
+
   // WhatsApp States
   const [waStatus, setWaStatus] = useState<'disconnected' | 'connecting' | 'qr' | 'connected'>('disconnected');
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
@@ -33,17 +44,25 @@ const SettingsView: React.FC = () => {
   const [pollingInterval, setPollingInterval] = useState<any>(null);
 
   useEffect(() => {
-    // Fetch current settings
     const fetchSettings = async () => {
       try {
-        const response = await api.get('/settings/webhooks');
-        if (response.data) {
-          setWebhookUrl(response.data.target_url || '');
-          setSecretKey(response.data.secret_key || '');
-          setIsActive(response.data.is_active ?? true);
+        const [webhookRes, fiscalRes] = await Promise.all([
+          api.get('/settings/webhooks'),
+          api.get('/settings/fiscal'),
+        ]);
+        if (webhookRes.data) {
+          setWebhookUrl(webhookRes.data.target_url || '');
+          setSecretKey(webhookRes.data.secret_key || '');
+          setIsActive(webhookRes.data.is_active ?? true);
+        }
+        if (fiscalRes.data) {
+          setIvaRate(fiscalRes.data.iva_rate ?? 0.23);
+          setCurrency(fiscalRes.data.currency ?? 'EUR');
+          setFiscalName(fiscalRes.data.fiscal_name ?? '');
+          setFiscalCountry(fiscalRes.data.fiscal_country ?? 'PT');
         }
       } catch (err) {
-        console.error("Failed to load settings", err);
+        console.error('Failed to load settings', err);
       }
     };
     fetchSettings();
@@ -118,9 +137,28 @@ const SettingsView: React.FC = () => {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
-      console.error("Save failed", err);
+      console.error('Save failed', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveFiscal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFiscalLoading(true);
+    try {
+      await api.post('/settings/fiscal', {
+        iva_rate: ivaRate,
+        currency,
+        fiscal_name: fiscalName || null,
+        fiscal_country: fiscalCountry,
+      });
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) {
+      console.error('Fiscal save failed', err);
+    } finally {
+      setFiscalLoading(false);
     }
   };
 
@@ -136,6 +174,127 @@ const SettingsView: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-8">
+          {/* Fiscal / IVA Settings Section */}
+          <div className="glass p-8 rounded-[32px] border border-white/5 shadow-2xl space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-400">
+                  <Euro size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Configurações Fiscais</h3>
+                  <p className="text-sm text-gray-500">Defina a taxa de IVA e moeda aplicados nas faturas processadas.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+                <Percent size={14} className="text-blue-400" />
+                FISCALIDADE PT
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveFiscal} className="space-y-6">
+              {/* IVA Rate */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Taxa de IVA</label>
+                {/* Quick select buttons */}
+                <div className="flex gap-3">
+                  {[{label: '6%', value: 0.06}, {label: '13%', value: 0.13}, {label: '23%', value: 0.23}].map(opt => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => setIvaRate(opt.value)}
+                      className={`px-5 py-3 rounded-2xl text-sm font-bold border transition-all ${
+                        Math.abs(ivaRate - opt.value) < 0.001
+                          ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20'
+                          : 'bg-white/5 text-gray-400 border-white/10 hover:border-blue-500/30 hover:text-white'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                  <div className="flex-1 relative">
+                    <Percent className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      value={(ivaRate * 100).toFixed(1)}
+                      onChange={e => setIvaRate(parseFloat(e.target.value) / 100)}
+                      className="w-full pl-9 pr-4 py-3 bg-[#0d1117] border border-white/10 rounded-2xl text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+                      placeholder="23.0"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-gray-500 ml-1">
+                  Taxa actualmente configurada: <span className="text-blue-400 font-bold">{(ivaRate * 100).toFixed(1)}%</span>
+                  {' '}— Esta taxa será usada pelo modelo Llama como fallback quando o IVA não estiver explícito no documento.
+                </p>
+              </div>
+
+              {/* Fiscal Name */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Nome Fiscal / NIF da Empresa</label>
+                <div className="relative">
+                  <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Ex: Sustentacódigo, Lda. — NIF 123456789"
+                    value={fiscalName}
+                    onChange={e => setFiscalName(e.target.value)}
+                    className="w-full pl-12 pr-5 py-4 bg-[#0d1117] border border-white/10 rounded-2xl text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Currency + Country */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Moeda</label>
+                  <select
+                    value={currency}
+                    onChange={e => setCurrency(e.target.value)}
+                    className="w-full px-5 py-4 bg-[#0d1117] border border-white/10 rounded-2xl text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+                  >
+                    <option value="EUR">€ Euro (EUR)</option>
+                    <option value="GBP">£ Libra (GBP)</option>
+                    <option value="CHF">CHF Franco Suíço</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">País Fiscal</label>
+                  <div className="relative">
+                    <Globe className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                    <input
+                      type="text"
+                      maxLength={2}
+                      placeholder="PT"
+                      value={fiscalCountry}
+                      onChange={e => setFiscalCountry(e.target.value.toUpperCase())}
+                      className="w-full pl-12 pr-5 py-4 bg-[#0d1117] border border-white/10 rounded-2xl text-sm text-white outline-none focus:border-blue-500/50 transition-all font-mono uppercase"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  disabled={fiscalLoading}
+                  className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-500 transition-all flex items-center justify-center gap-2 h-14 shadow-lg shadow-blue-500/20"
+                >
+                  {fiscalLoading ? (
+                    <RefreshCw className="animate-spin" size={20} />
+                  ) : (
+                    <>
+                      <Save size={20} />
+                      Guardar Configurações Fiscais
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
           {/* Outbound Webhooks Section */}
           <div className="glass p-8 rounded-[32px] border border-white/5 shadow-2xl space-y-8">
             <div className="flex items-center justify-between">

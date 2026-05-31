@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import LayoutBase from '../components/LayoutBase';
 import api from '../services/api';
+import DocumentViewerModal from '../components/DocumentViewerModal';
 
 interface Invoice {
   id: string;
@@ -96,6 +97,9 @@ const InvoicesInboxView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Viewer State
+  const [viewingDocument, setViewingDocument] = useState<{ id: string, name: string } | null>(null);
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -231,9 +235,14 @@ const InvoicesInboxView: React.FC = () => {
                          <div className="bg-white p-6 shadow-2xl border border-gray-100 rounded-2xl transform transition-transform group-hover:scale-105 duration-500">
                             <FileText size={80} className="text-gray-100" />
                          </div>
-                         <div className="mt-8 text-center space-y-1">
+                         <div className="mt-8 text-center space-y-1 z-10 relative">
                             <p className="font-black text-gray-900 text-sm">{selectedInvoice.filename || 'Fatura_Digital.pdf'}</p>
-                            <button className="text-[10px] text-blue-500 underline font-black uppercase tracking-widest mt-1">Ver PDF Completo</button>
+                            <button 
+                              onClick={() => setViewingDocument({ id: selectedInvoice.id, name: selectedInvoice.filename || 'Fatura_Digital.pdf' })}
+                              className="text-[10px] text-blue-500 underline font-black uppercase tracking-widest mt-1 hover:text-blue-700 transition-colors cursor-pointer"
+                            >
+                              Ver Documento Completo
+                            </button>
                          </div>
                       </div>
                    </div>
@@ -322,6 +331,15 @@ const InvoicesInboxView: React.FC = () => {
               )}
            </div>
         </div>
+      )}
+
+      {/* Document Viewer Modal */}
+      {viewingDocument && (
+        <DocumentViewerModal 
+          invoiceId={viewingDocument.id} 
+          filename={viewingDocument.name} 
+          onClose={() => setViewingDocument(null)} 
+        />
       )}
     </LayoutBase>
   );

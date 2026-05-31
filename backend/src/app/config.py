@@ -9,6 +9,7 @@ class EnvironmentSettings(BaseSettings):
     mongo_db_name: str = "finance_agent_docs"
     redis_url: str = "redis://localhost:6379/0"
     ollama_base_url: str = "http://localhost:11434"
+    chromadb_url: str = "http://localhost:8001"
     aws_access_key_id: str = ""
     whatsapp_access_token: str = ""
     whatsapp_verify_token: str = "sustentacodigo_verify_me"

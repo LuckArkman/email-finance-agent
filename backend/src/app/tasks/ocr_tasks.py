@@ -1,3 +1,4 @@
+import os
 import time
 import random
 from celery import Task
@@ -82,6 +83,16 @@ def enqueue_ocr_job(self, document_url: str, invoice_id: str, tenant_id: str = "
     try:
         print(f"Executing AI Extraction for {document_url}")
         
+        # 0. Pre-flight: Verify the file physically exists before doing any work.
+        #    This prevents indefinite pending states when a file reference is stale.
+        if not document_url or not os.path.exists(document_url):
+            print(f"OCR Task aborted: file not found on disk → {document_url}")
+            invoice = db.query(InvoiceRecord).filter(InvoiceRecord.id == invoice_id).first()
+            if invoice:
+                invoice.status = InvoiceStatus.REVIEW_REQUIRED.value
+                db.commit()
+            return {"status": "error", "reason": f"Physical file not found: {document_url}"}
+
         # 1. Image Pre-processing (Deskewing)
         # We correct the perspective before OCR to ensure maximum Llama 3 accuracy.
         if not document_url.lower().endswith(".pdf"):
@@ -152,6 +163,20 @@ def enqueue_ocr_job(self, document_url: str, invoice_id: str, tenant_id: str = "
             )
             db.add(audit)
             db.commit()
+
+            # 6. Vector Store Indexing (ChromaDB)
+            # Index the invoice with its full OCR text so it becomes searchable
+            # via semantic queries. This runs sync inside the Celery worker.
+            try:
+                from app.services.vector_store import VectorStoreService
+                VectorStoreService.index_invoice_sync(
+                    invoice=invoice,
+                    raw_text=raw_text,
+                    tenant_id=tenant_id,
+                )
+            except Exception as ve:
+                print(f"[VectorStore] Warning: indexing failed for invoice {invoice_id}: {ve}")
+                # Non-critical — do not fail the OCR task
 
         # HITL Hook: Dispatch if low confidence
         if confidence < 0.9:
