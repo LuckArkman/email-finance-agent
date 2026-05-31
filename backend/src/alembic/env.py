@@ -12,7 +12,11 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.database import BaseModel
-from app.models import Tenant, User, InvoiceRecord, Transaction, TenantStatus, InvoiceStatus
+from app.models import (
+    Tenant, TenantSettings, User, InvoiceRecord,
+    Transaction, TenantStatus, InvoiceStatus, DocumentType,
+    EmailAccount, EmailMessage, WebhookConfig
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

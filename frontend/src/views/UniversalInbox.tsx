@@ -5,15 +5,56 @@ import {
   RefreshCw, 
   Calendar, 
   FileText, 
-  ShoppingBag, 
   Eye, 
   Filter,
   ArrowUpDown,
   Clock,
-  Loader2
+  Loader2,
+  Receipt,
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
 import LayoutBase from '../components/LayoutBase';
 import api from '../services/api';
+
+const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ReactNode; pill: string }> = {
+  accounts_payable: {
+    label: 'Conta a Pagar',
+    icon: <FileText size={12} />,
+    pill: 'bg-blue-50 text-blue-600 border-blue-100',
+  },
+  paid_bill: {
+    label: 'Conta Paga',
+    icon: <CheckCircle2 size={12} />,
+    pill: 'bg-green-50 text-green-600 border-green-100',
+  },
+  payment_receipt: {
+    label: 'Comprovante',
+    icon: <Receipt size={12} />,
+    pill: 'bg-amber-50 text-amber-600 border-amber-100',
+  },
+  non_financial: {
+    label: 'Não Financeiro',
+    icon: <HelpCircle size={12} />,
+    pill: 'bg-gray-50 text-gray-400 border-gray-100',
+  },
+  // Legacy labels for backwards compatibility
+  'Accounts Payable': {
+    label: 'Conta a Pagar',
+    icon: <FileText size={12} />,
+    pill: 'bg-blue-50 text-blue-600 border-blue-100',
+  },
+  'Receipt': {
+    label: 'Comprovante',
+    icon: <Receipt size={12} />,
+    pill: 'bg-amber-50 text-amber-600 border-amber-100',
+  },
+  'Non-Financial': {
+    label: 'Não Financeiro',
+    icon: <HelpCircle size={12} />,
+    pill: 'bg-gray-50 text-gray-400 border-gray-100',
+  },
+};
 
 interface SimpleEmail {
   id: string;
@@ -22,10 +63,50 @@ interface SimpleEmail {
   date: string;
   category: string;
   snippet: string;
+  body: string;
 }
+
+const isHtmlContent = (text: string): boolean => {
+  return /<[a-z][\s\S]*>/i.test(text);
+};
+
+const EmailBodyViewer: React.FC<{ content: string }> = ({ content }) => {
+  if (!content) {
+    return (
+      <div className="flex items-center justify-center py-10 text-gray-300 italic text-sm">
+        Conteúdo não disponível para este e-mail.
+      </div>
+    );
+  }
+
+  if (isHtmlContent(content)) {
+    return (
+      <iframe
+        srcDoc={content}
+        sandbox="allow-same-origin"
+        className="w-full rounded-2xl border border-gray-100"
+        style={{ minHeight: '360px', height: 'auto', maxHeight: '500px' }}
+        title="Conteúdo do E-mail"
+        onLoad={(e) => {
+          const iframe = e.currentTarget;
+          if (iframe.contentDocument) {
+            iframe.style.height = iframe.contentDocument.body.scrollHeight + 'px';
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-2xl p-5 border border-gray-100 max-h-[450px] overflow-y-auto">
+      {content}
+    </pre>
+  );
+};
 
 const UniversalInbox: React.FC = () => {
   const [emails, setEmails] = useState<SimpleEmail[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<SimpleEmail | null>(null);
   const [filterDays, setFilterDays] = useState(30);
   const [loading, setLoading] = useState(true);
   
@@ -33,7 +114,11 @@ const UniversalInbox: React.FC = () => {
     setLoading(true);
     try {
       const res = await api.get('/emails/inbox');
-      setEmails(res.data || []);
+      const allEmails = res.data || [];
+      const financialEmails = allEmails.filter((email: SimpleEmail) => 
+        email.category !== 'Non-Financial' && email.category !== 'non_financial'
+      );
+      setEmails(financialEmails);
     } catch (err) {
       console.error("Failed to fetch emails", err);
     } finally {
@@ -135,7 +220,7 @@ const UniversalInbox: React.FC = () => {
                           <tr key={email.id} className="group hover:bg-gray-50/50 transition-all cursor-pointer">
                              <td className="p-6 pl-10 border-r border-gray-50/50">
                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-                                  email.category !== 'Non-Financial' ? 'bg-blue-50 text-blue-500 shadow-sm' : 'bg-gray-50 text-gray-300'
+                                  email.category !== 'Non-Financial' && email.category !== 'non_financial' ? 'bg-blue-50 text-blue-500 shadow-sm' : 'bg-gray-50 text-gray-300'
                                 }`}>
                                    <Calendar size={18} />
                                 </div>
@@ -153,16 +238,21 @@ const UniversalInbox: React.FC = () => {
                                 </div>
                              </td>
                              <td className="p-6 border-r border-gray-50/50">
-                                <span className={`inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm border ${
-                                  email.category === 'Fatura' || email.category === 'Accounts Payable' ? 'bg-blue-50 text-blue-600 border-blue-100' : 
-                                  email.category === 'Receipt' ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-gray-50 text-gray-400 border-gray-100'
-                                }`}>
-                                   {email.category === 'Receipt' ? <ShoppingBag size={12} /> : <FileText size={12} />}
-                                   <span>{email.category}</span>
-                                </span>
+                                {(() => {
+                                  const cfg = CATEGORY_CONFIG[email.category] || CATEGORY_CONFIG['Non-Financial'];
+                                  return (
+                                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-extrabold ${cfg.pill}`}>
+                                      {cfg.icon}
+                                      <span>{cfg.label}</span>
+                                    </div>
+                                  );
+                                })()}
                              </td>
                              <td className="p-6 text-right pr-10">
-                                <button className="p-3.5 bg-white border border-gray-100 hover:bg-blue-600 hover:text-white rounded-2xl text-gray-400 shadow-sm transition-all transform active:scale-95 group-hover:shadow-lg group-hover:shadow-blue-500/10">
+                                <button 
+                                  onClick={() => setSelectedEmail(email)}
+                                  className="p-3.5 bg-white border border-gray-100 hover:bg-blue-600 hover:text-white rounded-2xl text-gray-400 shadow-sm transition-all transform active:scale-95 group-hover:shadow-lg group-hover:shadow-blue-500/10"
+                                >
                                    <Eye size={18} />
                                 </button>
                              </td>
@@ -182,6 +272,62 @@ const UniversalInbox: React.FC = () => {
             )}
          </div>
       </div>
+
+      {/* Modal View Email Details */}
+      {selectedEmail && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedEmail(null)}>
+           <div className="bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="p-8 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
+                 <div>
+                    <h3 className="text-xl font-black text-gray-900 mb-2">{selectedEmail.subject}</h3>
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                       <Mail size={16} />
+                       <span className="font-bold">{selectedEmail.sender}</span>
+                    </div>
+                 </div>
+                 {(() => {
+                   const cfg = CATEGORY_CONFIG[selectedEmail.category] || CATEGORY_CONFIG['Non-Financial'];
+                   return (
+                     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-extrabold ${cfg.pill}`}>
+                       {cfg.icon}
+                       <span>{cfg.label}</span>
+                     </div>
+                   );
+                 })()}
+              </div>
+              
+              <div className="p-8 bg-white space-y-6">
+                 <div>
+                    <h4 className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-3">Detalhes do Documento</h4>
+                    <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
+                       <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                          <span className="text-sm font-bold text-gray-400">Data de Receção</span>
+                          <span className="text-sm font-black text-gray-900">{selectedEmail.date}</span>
+                       </div>
+                       <div className="flex justify-between items-center">
+                          <span className="text-sm font-bold text-gray-400">ID do Sistema</span>
+                          <span className="text-sm font-black text-gray-900 font-mono">{selectedEmail.id.substring(0, 8)}...</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div>
+                     <h4 className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-3">Conteúdo do E-mail</h4>
+                     <EmailBodyViewer content={selectedEmail.body || selectedEmail.snippet} />
+                  </div>
+              </div>
+
+              <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end">
+                 <button 
+                   onClick={() => setSelectedEmail(null)}
+                   className="px-8 py-3.5 bg-white border border-gray-200 rounded-xl text-sm font-black text-gray-600 shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+                 >
+                    Fechar
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
     </LayoutBase>
   );
 };

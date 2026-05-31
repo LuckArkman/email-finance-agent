@@ -132,7 +132,9 @@ async function startWhatsApp() {
 // ─────────────────────────────────────────────
 // Express REST API (consumed by Python backend)
 // ─────────────────────────────────────────────
+const cors = require('cors');
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 /** GET /status — returns current connection state */

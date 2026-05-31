@@ -94,6 +94,7 @@ def create_fastapi_app() -> FastAPI:
     from app.api.chat import router as chat_router
     from app.api.review import router as review_router
     from app.api.documents import router as documents_router
+    from app.api.search import router as search_router
 
     app.include_router(chat_router)
     app.include_router(ingestion_router)
@@ -107,6 +108,7 @@ def create_fastapi_app() -> FastAPI:
     app.include_router(emails_router)
     app.include_router(review_router)
     app.include_router(documents_router)
+    app.include_router(search_router)
 
     return app
 

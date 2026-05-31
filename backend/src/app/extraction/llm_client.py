@@ -8,9 +8,10 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
-import instructor
 
 from app.config import BaseAPIConfig
+from app.extraction.rag_knowledge import build_rag_system_prompt
+
 
 class InvoiceItemSchema(BaseModel):
     description: str = Field(description="Description of the item or service.")
@@ -18,39 +19,60 @@ class InvoiceItemSchema(BaseModel):
     unit_price: float = Field(default=0.0, description="Price per unit.")
     total_price: float = Field(description="Total price for this line item.")
 
+
 class InvoiceOutputSchema(BaseModel):
     """
-    Schema for representing the final parsed structure of an Invoice/Receipt.
-    This acts as the strict Output Parser constraint for the LLM.
+    Schema for structured extraction of financial documents from email text.
+    Supports 4 document types with full IVA breakdown in EUR.
     """
-    vendor_name: str = Field(description="Name of the company that issued the invoice.")
+    # Classificação
+    document_type: str = Field(
+        default="non_financial",
+        description="Document type: accounts_payable | paid_bill | payment_receipt | non_financial"
+    )
+    is_valid_invoice: bool = Field(
+        description="True if the text is a valid financial document with monetary values."
+    )
+
+    # Entidade
+    vendor_name: str = Field(default="", description="Name of the company that issued the invoice.")
     invoice_number: Optional[str] = Field(None, description="The unique invoice or receipt number.")
-    issue_date: Optional[str] = Field(None, description="Date of the invoice/receipt in YYYY-MM-DD format if possible.")
-    due_date: Optional[str] = Field(None, description="Due date of the invoice in YYYY-MM-DD format if applicable.")
-    currency: str = Field(default="BRL", description="Currency of the transaction (e.g., BRL, USD, EUR).")
-    subtotal: float = Field(default=0.0, description="Subtotal amount before taxes.")
-    tax_amount: float = Field(default=0.0, description="Total tax amount.")
-    total_amount: float = Field(description="The grand total amount to be paid.")
-    
-    iban: Optional[str] = Field(None, description="Bank account IBAN for payment.")
+
+    # Datas
+    issue_date: Optional[str] = Field(None, description="Issue date in YYYY-MM-DD format.")
+    due_date: Optional[str] = Field(None, description="Payment due date in YYYY-MM-DD format.")
+
+    # Valores financeiros (sempre EUR)
+    currency: str = Field(default="EUR", description="Currency, always EUR by default.")
+    net_amount: float = Field(default=0.0, description="Amount before IVA/VAT (valor líquido).")
+    iva_rate: float = Field(default=0.23, description="IVA rate applied (e.g. 0.23 for 23%).")
+    iva_amount: float = Field(default=0.0, description="IVA/VAT amount (valor do IVA).")
+    total_amount: float = Field(default=0.0, description="Grand total including IVA.")
+
+    # Dados bancários e reconciliação
+    iban: Optional[str] = Field(None, description="Payer IBAN (conta que emite).")
+    iban_beneficiary: Optional[str] = Field(None, description="Beneficiary IBAN (conta que recebe).")
     swift: Optional[str] = Field(None, description="Bank SWIFT/BIC code.")
-    
-    items: List[InvoiceItemSchema] = Field(default_factory=list, description="List of items/services on the invoice.")
-    is_valid_invoice: bool = Field(description="True if the text is a valid financial document (Invoice/Receipt).")
+    payment_reference: Optional[str] = Field(None, description="Multibanco reference, MB WAY, or transfer description.")
+    linked_invoice_number: Optional[str] = Field(
+        None,
+        description="Invoice number this payment receipt is paying (only for payment_receipt type)."
+    )
+
+    # Line items
+    items: List[InvoiceItemSchema] = Field(default_factory=list, description="List of items/services.")
 
 
 class LLMExtractorClient:
     """
-    Orchestrates extraction of highly unstructured text or LayoutLM outputs
-    into structured Pydantic models using OpenAI's Function Calling (Instructor)
-    or Langchain core tools.
+    Orchestrates LLM-based extraction of financial documents from raw email text.
+    Uses Llama3 (via Ollama) with a structured RAG prompt for Portuguese/EU documents.
     """
     def __init__(self, model_name: str = "llama3:latest", temperature: float = 0.0):
         self.settings = BaseAPIConfig.get_settings()
         self.api_key = self.settings.openai_api_key
         self.ollama_base_url = self.settings.ollama_base_url
-        
-        # Prefer Ollama/Llama3 if configured
+
         if self.ollama_base_url:
             print(f"Initializing LLMExtractor with Local Llama3 via Ollama at {self.ollama_base_url}")
             self.llm = ChatOllama(
@@ -60,46 +82,68 @@ class LLMExtractorClient:
                 timeout=180
             )
         else:
-            print(f"Initializing LLMExtractor with OpenAI {model_name}")
+            print(f"Initializing LLMExtractor with OpenAI fallback")
             self.llm = ChatOpenAI(
-                model="gpt-4-turbo-preview", # Fallback model
+                model="gpt-4-turbo-preview",
                 temperature=temperature,
                 api_key=self.api_key,
                 max_retries=3
             )
-        
-        # Output parser bound to Pydantic
+
         self.parser = PydanticOutputParser(pydantic_object=InvoiceOutputSchema)
 
-    def format_prompt(self) -> ChatPromptTemplate:
+    def build_prompt(self, tenant_iva_rate: float = 0.23, currency: str = "EUR") -> ChatPromptTemplate:
         """
-        Creates the ChatPromptTemplate using the centralized Brain Persona
-        from the PromptManager.
+        Builds the RAG-injected ChatPromptTemplate with tenant-specific IVA rate.
         """
-        from app.extraction.prompts import PromptManager
-        return PromptManager.build_agent_brain_prompt()
+        system_prompt = build_rag_system_prompt(tenant_iva_rate=tenant_iva_rate, currency=currency)
+        human_template = "Email content to analyze:\n\n{ocr_text}"
+        return ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", human_template)
+        ])
 
-    async def invoke_llm_chain(self, raw_ocr_text: str, custom_prompt: Optional[ChatPromptTemplate] = None) -> Optional[InvoiceOutputSchema]:
+    async def invoke_llm_chain(
+        self,
+        raw_text: str,
+        tenant_iva_rate: float = 0.23,
+        currency: str = "EUR",
+        custom_prompt: Optional[ChatPromptTemplate] = None
+    ) -> Optional[InvoiceOutputSchema]:
         """
-        Triggers the LCEL (LangChain Expression Language) pipeline 
-        to process the raw unstructured OCR text into a validated Pydantic DTO.
+        Runs the LCEL pipeline: Prompt | LLM | Parser
+        Returns structured InvoiceOutputSchema or None on failure.
         """
-        prompt = custom_prompt if custom_prompt else self.format_prompt()
-        
-        # Chain formulation: Prompt | LLM | Parser
+        prompt = custom_prompt if custom_prompt else self.build_prompt(
+            tenant_iva_rate=tenant_iva_rate,
+            currency=currency
+        )
         chain = prompt | self.llm | self.parser
-        
+
         try:
-            # Automatic retry logic is built-in Langchain for both OpenAI and Ollama
-            print(f"Sending text to AI Agent ({self.llm.__class__.__name__}) for semantic extraction...")
-            result: InvoiceOutputSchema = await chain.ainvoke(
-                {"ocr_text": raw_ocr_text, "format_instructions": self.parser.get_format_instructions()}
-            )
+            print(f"Sending text to AI Agent ({self.llm.__class__.__name__}) — IVA: {tenant_iva_rate*100:.1f}%")
+            result: InvoiceOutputSchema = await chain.ainvoke({
+                "ocr_text": raw_text,
+                "format_instructions": self.parser.get_format_instructions()
+            })
+
+            # Post-processing: ensure net_amount and iva_amount are consistent
+            if result.total_amount > 0 and result.iva_amount == 0.0:
+                result.iva_amount = round(
+                    result.total_amount * tenant_iva_rate / (1 + tenant_iva_rate), 2
+                )
+                result.net_amount = round(result.total_amount - result.iva_amount, 2)
+
+            if result.net_amount > 0 and result.total_amount == 0.0:
+                result.total_amount = round(result.net_amount * (1 + result.iva_rate), 2)
+                result.iva_amount = round(result.total_amount - result.net_amount, 2)
+
+            result.currency = currency
             return result
-            
+
         except OutputParserException as e:
-            print(f"Failed to parse LLM output cleanly: {e}")
+            print(f"LLM output parse error: {e}")
             return None
         except Exception as e:
-            print(f"Generic error in LLMExtractorClient: {e}")
+            print(f"LLM extraction error: {e}")
             return None

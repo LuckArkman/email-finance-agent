@@ -42,6 +42,7 @@ class SimpleEmailDTO(BaseModel):
     date: str
     category: str # Extracted or predicted category
     snippet: str
+    body: str
 
 class ReviewItemResponse(BaseModel):
     id: str

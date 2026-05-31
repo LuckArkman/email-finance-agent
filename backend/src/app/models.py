@@ -15,16 +15,18 @@ class InvoiceStatus(enum.Enum):
     PAID = "paid"
     OVERDUE = "overdue"
     REVIEW_REQUIRED = "review_required"
+    RECONCILIATION = "reconciliation"  # Contas vencidas sem comprovante
+
+class DocumentType(enum.Enum):
+    ACCOUNTS_PAYABLE = "accounts_payable"   # Conta a pagar
+    PAID_BILL = "paid_bill"                 # Conta paga
+    PAYMENT_RECEIPT = "payment_receipt"     # Comprovante de pagamento
+    NON_FINANCIAL = "non_financial"         # Não financeiro
 
 class DocumentSource(enum.Enum):
     EMAIL = "email"
     WHATSAPP = "whatsapp"
     MANUAL = "manual"
-
-class DocumentType(enum.Enum):
-    INVOICE = "invoice"
-    RECEIPT = "receipt"
-    OTHER = "other"
 
 def generate_uuid() -> str:
     return str(uuid4())
@@ -40,6 +42,29 @@ class Tenant(BaseModel):
     users = relationship("User", back_populates="tenant")
     invoices = relationship("InvoiceRecord", back_populates="tenant")
     email_accounts = relationship("EmailAccount", back_populates="tenant")
+    settings = relationship("TenantSettings", back_populates="tenant", uselist=False)
+
+
+class TenantSettings(BaseModel):
+    """
+    Per-tenant fiscal and operational configuration.
+    Stores user-defined IVA rate and currency preferences.
+    """
+    __tablename__ = "tenant_settings"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    tenant_id = Column(String, ForeignKey("tenants.id"), unique=True, nullable=False)
+
+    # Configurações Fiscais
+    iva_rate = Column(Float, default=0.23)          # Taxa de IVA (ex: 0.23 = 23%)
+    currency = Column(String, default="EUR")         # Moeda padrão
+    fiscal_name = Column(String, nullable=True)      # Nome fiscal / NIF da empresa
+    fiscal_country = Column(String, default="PT")    # País fiscal
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    tenant = relationship("Tenant", back_populates="settings")
 
 class User(BaseModel):
     __tablename__ = "users"
@@ -59,27 +84,34 @@ class InvoiceRecord(BaseModel):
     id = Column(String, primary_key=True, default=generate_uuid)
     tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
     
+    # Classificação do documento (pelo LLM)
+    document_type = Column(String, default=DocumentType.ACCOUNTS_PAYABLE.value)
+
     vendor_name = Column(String, nullable=True)
     invoice_number = Column(String, nullable=True)
     issue_date = Column(DateTime, nullable=True)
     due_date = Column(DateTime, nullable=True)
     
-    subtotal = Column(Float, default=0.0)
-    tax_amount = Column(Float, default=0.0)
-    total_amount = Column(Float, default=0.0)
-    currency = Column(String, default="BRL")
+    # Valores financeiros com IVA separado
+    net_amount = Column(Float, default=0.0)          # Valor líquido (sem IVA)
+    iva_rate = Column(Float, default=0.23)           # Taxa de IVA aplicada
+    iva_amount = Column(Float, default=0.0)          # Valor do IVA
+    subtotal = Column(Float, default=0.0)            # Subtotal (alias de net_amount)
+    tax_amount = Column(Float, default=0.0)          # Alias de iva_amount (compatibilidade)
+    total_amount = Column(Float, default=0.0)        # Total com IVA
+    currency = Column(String, default="EUR")
     
     status = Column(String, default=InvoiceStatus.PENDING.value)
     source = Column(String, default=DocumentSource.EMAIL.value)
-    document_type = Column(String, default=DocumentType.INVOICE.value)
     
     confidence_score = Column(Float, default=0.0)
     raw_document_url = Column(String, nullable=True)
     
-    # Matching/Reconciliation
-    linked_to_id = Column(String, ForeignKey("invoices.id"), nullable=True)
+    # Reconciliação
+    linked_to_id = Column(String, ForeignKey("invoices.id"), nullable=True)  # Fatura ligada a este comprovante
+    payment_reference = Column(String, nullable=True)                         # Referência MB / IBAN / transferência
     
-    # Granular Financials
+    # Dados bancários
     iban = Column(String, nullable=True)
     swift = Column(String, nullable=True)
     
@@ -160,6 +192,7 @@ class EmailMessage(BaseModel):
     subject = Column(String, nullable=True)
     sender = Column(String, nullable=True)
     snippet = Column(Text, nullable=True)
+    body = Column(Text, nullable=True)
     category = Column(String, default="Non-Financial") # Accounts Payable, Receipt, etc.
     date = Column(DateTime, default=datetime.utcnow)
     

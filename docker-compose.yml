@@ -44,7 +44,20 @@ services:
     container_name: efa_ollama_pull
     depends_on:
       - ollama
-    entrypoint: [ "sh", "-c", "until curl -s ollama:11434/api/tags; do sleep 5; done; curl -X POST ollama:11434/api/pull -d '{\"name\": \"llama3\"}'" ]
+    entrypoint: [ "sh", "-c", "until curl -s ollama:11434/api/tags; do sleep 5; done; curl -X POST ollama:11434/api/pull -d '{\"name\": \"llama3\"}'; curl -X POST ollama:11434/api/pull -d '{\"name\": \"nomic-embed-text\"}'; echo 'All models pulled.'" ]
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: efa_chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    restart: unless-stopped
+
 
   backend:
     build: 
@@ -62,9 +75,11 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OLLAMA_BASE_URL=http://ollama:11434
+      - CHROMADB_URL=http://chromadb:8000
       - SENTRY_DSN=${SENTRY_DSN}
     volumes:
       - tmp_uploads:/tmp/uploads
+      - email_attachments:/tmp/email_attachments
       - ./backend/src:/app/src
       - ./backend/start.sh:/app/start.sh
       - ./backend/entrypoint.sh:/app/entrypoint.sh
@@ -75,6 +90,8 @@ services:
       - mongodb
       - redis
       - ollama
+      - chromadb
+
 
   celery_worker:
     build: 
@@ -90,9 +107,11 @@ services:
       - MONGO_URL=mongodb://mongodb:27017
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OLLAMA_BASE_URL=http://ollama:11434
+      - CHROMADB_URL=http://chromadb:8000
       - SENTRY_DSN=${SENTRY_DSN}
     volumes:
       - tmp_uploads:/tmp/uploads
+      - email_attachments:/tmp/email_attachments
       - ./backend/src:/app/src
     command: ["/app/src/start-celery.sh"]
     depends_on:
@@ -100,7 +119,9 @@ services:
       - mongodb
       - postgres
       - ollama
+      - chromadb
     restart: unless-stopped
+
 
   frontend:
     build:
@@ -137,3 +158,6 @@ volumes:
   ollama_data:
   tmp_uploads:
   baileys_auth:
+  chroma_data:
+  email_attachments:
+

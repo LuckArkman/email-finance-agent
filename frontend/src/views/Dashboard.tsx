@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import LayoutBase from '../components/LayoutBase';
+import DocumentViewerModal from '../components/DocumentViewerModal';
 
 const Dashboard: React.FC = () => {
   const [pendingDocs, setPendingDocs] = useState<any[]>([]);
   const [recentDocs, setRecentDocs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingDocument, setViewingDocument] = useState<{ id: string, name: string } | null>(null);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -98,7 +100,11 @@ const Dashboard: React.FC = () => {
                 </>
               ) : (
                 pendingDocs.map((doc) => (
-                  <div key={doc.id} className="bg-white p-6 rounded-[40px] shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-gray-200/50 transition-all group relative overflow-hidden flex flex-col items-center">
+                  <div 
+                    key={doc.id} 
+                    onClick={() => setViewingDocument({ id: doc.id, name: doc.filename || doc.vendor_name || 'Documento_IA.pdf' })}
+                    className="cursor-pointer bg-white p-6 rounded-[40px] shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-gray-200/50 transition-all group relative overflow-hidden flex flex-col items-center"
+                  >
                      <div className="absolute top-6 right-6 z-10">
                         <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg tracking-wider border shadow-sm ${
                           doc.status === 'pending' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-blue-50 text-blue-600 border-blue-100'
@@ -147,7 +153,11 @@ const Dashboard: React.FC = () => {
                  <div className="col-span-full py-20 text-center opacity-30 italic text-gray-400">Nenhum documento processado recentemente.</div>
               )}
               {recentDocs.map((doc) => (
-                <div key={doc.id} className="bg-white p-6 rounded-[40px] shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-gray-200/50 transition-all group cursor-pointer flex flex-col">
+                <div 
+                  key={doc.id} 
+                  onClick={() => setViewingDocument({ id: doc.id, name: doc.filename || doc.vendor_name || 'Fatura_IA.pdf' })}
+                  className="bg-white p-6 rounded-[40px] shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-gray-200/50 transition-all group cursor-pointer flex flex-col"
+                >
                    <div className="w-full aspect-[3/4] bg-gray-50/50 rounded-[32px] mb-6 flex items-center justify-center relative border border-gray-50 shadow-inner group-hover:bg-white transition-colors">
                       <FileText className="text-gray-100" size={80} />
                       <div className="absolute bottom-6 left-6">
@@ -233,6 +243,15 @@ const Dashboard: React.FC = () => {
            </div>
         </div>
       </div>
+
+      {/* Document Viewer Modal */}
+      {viewingDocument && (
+        <DocumentViewerModal 
+          invoiceId={viewingDocument.id} 
+          filename={viewingDocument.name} 
+          onClose={() => setViewingDocument(null)} 
+        />
+      )}
     </LayoutBase>
   );
 };
