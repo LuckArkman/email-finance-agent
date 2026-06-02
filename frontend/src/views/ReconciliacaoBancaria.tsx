@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   Building, 
   Search, 
@@ -21,12 +21,9 @@ const ReconciliacaoBancaria: React.FC = () => {
 
   const fetchReconciliationData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
       const [txRes, sugRes] = await Promise.all([
-        axios.get('/api/v1/reconciliation/transactions', { headers }),
-        axios.get('/api/v1/reconciliation/suggestions', { headers })
+        api.get('/reconciliation/transactions'),
+        api.get('/reconciliation/suggestions')
       ]);
       
       setBankTransactions(txRes.data);
@@ -44,10 +41,7 @@ const ReconciliacaoBancaria: React.FC = () => {
 
   const handleApproveSuggestion = async (transactionId: string, invoiceId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`/api/v1/reconciliation/match/${transactionId}/${invoiceId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post(`/reconciliation/match/${transactionId}/${invoiceId}`, {});
       // Refresh data
       fetchReconciliationData();
     } catch (error) {
@@ -81,17 +75,17 @@ const ReconciliacaoBancaria: React.FC = () => {
            ) : (
              <div className="space-y-4">
                 {bankTransactions.map((tx) => (
-                  <div key={tx.id} className={`flex items-center p-6 rounded-[32px] border border-gray-100 bg-white hover:bg-gray-50 transition-all group shadow-sm ${tx.is_reconciled ? 'opacity-50 grayscale-0' : 'border-blue-500/10'}`}>
+                  <div key={tx.id} className={`flex items-center p-6 rounded-[32px] border border-gray-100 bg-white hover:bg-gray-50 transition-all group shadow-sm ${tx.isReconciled ? 'opacity-50 grayscale-0' : 'border-blue-500/10'}`}>
                      <div className="w-12 h-12 rounded-[18px] bg-gray-50 flex items-center justify-center text-red-500/70 group-hover:bg-red-500 group-hover:text-white transition-all">
                         <MinusCircle size={24} />
                      </div>
                      <div className="flex-1 ml-6">
                         <h4 className="font-bold text-[14px] text-gray-900">{tx.description || "Transação sem nome"}</h4>
-                        <p className="text-[11px] text-gray-500 font-bold tracking-widest uppercase">{new Date(tx.payment_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</p>
+                        <p className="text-[11px] text-gray-500 font-bold tracking-widest uppercase">{new Date(tx.paymentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</p>
                      </div>
                      <div className="text-right">
                         <p className="font-black text-[16px] text-gray-900">{Number(tx.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'EUR' })}</p>
-                        {tx.is_reconciled && (
+                        {tx.isReconciled && (
                           <div className="flex items-center justify-end space-x-1 mt-1">
                              <ShieldCheck size={12} className="text-green-500" />
                              <span className="text-[10px] font-extrabold text-green-500 uppercase tracking-widest">Reconciliado</span>
@@ -125,7 +119,7 @@ const ReconciliacaoBancaria: React.FC = () => {
                         <div className="flex justify-between items-start">
                            <div className="space-y-1">
                               <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-blue-500 text-white rounded-md">Confiança {Math.round(sug.confidence * 100)}%</span>
-                              <h4 className="font-black text-lg pt-1 text-gray-900">{sug.vendor_name}</h4>
+                              <h4 className="font-black text-lg pt-1 text-gray-900">{sug.vendorName}</h4>
                            </div>
                            <PlusCircle size={24} className="text-blue-500/50" />
                         </div>
@@ -133,14 +127,14 @@ const ReconciliacaoBancaria: React.FC = () => {
                         <div className="bg-white rounded-2xl p-4 flex items-center space-x-3 border border-gray-100 border-dashed">
                            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><FileCheck size={20} /></div>
                            <div className="flex-1">
-                              <p className="text-xs font-bold text-gray-700 truncate">{sug.document_name}</p>
+                              <p className="text-xs font-bold text-gray-700 truncate">{sug.documentName}</p>
                               <p className="text-[10px] text-gray-400 font-extrabold uppercase">Fatura Associada</p>
                            </div>
                         </div>
 
                         <div className="flex space-x-3">
                            <button 
-                             onClick={() => handleApproveSuggestion(sug.transaction_id, sug.invoice_id)}
+                             onClick={() => handleApproveSuggestion(sug.transactionId, sug.invoiceId)}
                              className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-[12px] font-black shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
                            >
                              Aprovar Sugestão

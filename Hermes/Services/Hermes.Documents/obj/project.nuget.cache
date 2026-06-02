@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "dgSpecHash": "tXeeRSN9QJ0=",
+  "success": true,
+  "projectFilePath": "D:\\email-finance-agent\\Hermes\\Services\\Hermes.Documents\\Hermes.Documents.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\MPLopes\\.nuget\\packages\\awssdk.core\\4.0.7.4\\awssdk.core.4.0.7.4.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\awssdk.s3\\4.0.23.5\\awssdk.s3.4.0.23.5.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\masstransit\\9.1.1\\masstransit.9.1.1.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\masstransit.abstractions\\9.1.1\\masstransit.abstractions.9.1.1.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\masstransit.rabbitmq\\9.1.1\\masstransit.rabbitmq.9.1.1.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\microsoft.entityframeworkcore\\9.0.0\\microsoft.entityframeworkcore.9.0.0.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\9.0.0\\microsoft.entityframeworkcore.abstractions.9.0.0.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\9.0.0\\microsoft.entityframeworkcore.analyzers.9.0.0.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\microsoft.entityframeworkcore.relational\\9.0.0\\microsoft.entityframeworkcore.relational.9.0.0.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\microsoft.extensions.hosting\\10.0.8\\microsoft.extensions.hosting.10.0.8.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\npgsql\\9.0.0\\npgsql.9.0.0.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\9.0.0\\npgsql.entityframeworkcore.postgresql.9.0.0.nupkg.sha512",
+    "C:\\Users\\MPLopes\\.nuget\\packages\\rabbitmq.client\\7.2.1\\rabbitmq.client.7.2.1.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "message": "PackageReference Microsoft.Extensions.Hosting will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
+      "projectPath": "D:\\email-finance-agent\\Hermes\\Services\\Hermes.Documents\\Hermes.Documents.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\email-finance-agent\\Hermes\\Services\\Hermes.Documents\\Hermes.Documents.csproj",
+      "libraryId": "Microsoft.Extensions.Hosting",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}

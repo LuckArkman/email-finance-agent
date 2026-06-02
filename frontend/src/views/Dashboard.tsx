@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
       setPendingDocs(queueRes.data || []);
       
       // For now, recent docs might still be mocked or I can fetch approved invoices
-      const invoicesRes = await api.get('/invoices?limit=4&status_filter=paid');
+      const invoicesRes = await api.get('/invoices?limit=4&statusFilter=paid');
       setRecentDocs(invoicesRes.data.data || []);
     } catch (err) {
       console.error("Failed to fetch dashboard data", err);

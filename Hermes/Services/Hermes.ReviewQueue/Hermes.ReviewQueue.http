@@ -1,0 +1,6 @@
+@Hermes.ReviewQueue_HostAddress = http://localhost:5013
+
+GET {{Hermes.ReviewQueue_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

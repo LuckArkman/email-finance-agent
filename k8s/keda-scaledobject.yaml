@@ -1,0 +1,33 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: hermes-extraction-keda
+  namespace: hermes-v2
+spec:
+  scaleTargetRef:
+    name: hermes-extraction # O deployment alvo do Autoscaling
+  minReplicaCount: 1        # À noite, com a fila a zeros, mantém 1 pod de pé
+  maxReplicaCount: 20       # No máximo instanciar 20 contentores em simultâneo
+  pollingInterval: 10       # Consulta o RabbitMQ de 10 em 10 segundos
+  cooldownPeriod:  120      # Espera 2 minutos antes de matar pods após a fila esvaziar
+  triggers:
+  - type: rabbitmq
+    metadata:
+      protocol: amqp
+      queueName: hermes-extraction-queue # A fila central MassTransit
+      mode: QueueLength
+      value: "50" # Se houver > 50 faturas, atira mais Pods
+    authenticationRef:
+      name: keda-rabbitmq-auth
+
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-rabbitmq-auth
+  namespace: hermes-v2
+spec:
+  secretTargetRef:
+  - parameter: host
+    name: hermes-rabbitmq-secret
+    key: host-connection-string

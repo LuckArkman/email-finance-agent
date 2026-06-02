@@ -1,0 +1,13 @@
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\bin\Debug\net9.0\Hermes.EventBus.deps.json
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\bin\Debug\net9.0\Hermes.EventBus.dll
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\bin\Debug\net9.0\Hermes.EventBus.pdb
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\Hermes.EventBus.csproj.AssemblyReference.cache
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\Hermes.EventBus.GeneratedMSBuildEditorConfig.editorconfig
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\Hermes.EventBus.AssemblyInfoInputs.cache
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\Hermes.EventBus.AssemblyInfo.cs
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\Hermes.EventBus.csproj.CoreCompileInputs.cache
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\Hermes.EventBus.sourcelink.json
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\Hermes.EventBus.dll
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\refint\Hermes.EventBus.dll
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\Hermes.EventBus.pdb
+D:\email-finance-agent\Hermes\Core\Hermes.EventBus\obj\Debug\net9.0\ref\Hermes.EventBus.dll

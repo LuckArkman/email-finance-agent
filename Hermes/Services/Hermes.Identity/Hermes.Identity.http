@@ -1,0 +1,6 @@
+@Hermes.Identity_HostAddress = http://localhost:5103
+
+GET {{Hermes.Identity_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

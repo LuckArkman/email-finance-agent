@@ -1,0 +1,74 @@
+# Hermes Agent — Email Finance Agent Configuration
+# https://hermes-agent.nousresearch.com/docs/user-guide/configuration
+
+# ------------------------------------------------------------
+# LLM Provider — Local Ollama (swap for nous-portal in prod)
+# ------------------------------------------------------------
+provider: ollama
+model: hermes3:8b
+# Para produção com Nous Portal:
+# provider: nous-portal
+# model: hermes-3-llama-3.1-70b
+
+# ------------------------------------------------------------
+# Gateway — Email Inbox (IMAP/SMTP)
+# ------------------------------------------------------------
+gateway:
+  email:
+    enabled: true
+    address: "${FINANCE_EMAIL_ADDRESS}"
+    password: "${FINANCE_EMAIL_APP_PASSWORD}"
+    imap_host: "${FINANCE_IMAP_HOST}"
+    imap_port: 993
+    imap_use_ssl: true
+    smtp_host: "${FINANCE_SMTP_HOST}"
+    smtp_port: 587
+    smtp_use_tls: true
+    # Apenas processar emails destes remetentes (segurança)
+    # allowed_senders pode ser omitido para aceitar qualquer remetente
+    poll_interval: 30  # segundos entre verificações
+
+# ------------------------------------------------------------
+# API Server — Para o .NET Gateway consultar status do agente
+# ------------------------------------------------------------
+api_server:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8642
+  key: "${HERMES_API_SERVER_KEY}"
+  cors_origins:
+    - "http://localhost:5000"   # Hermes.Gateway .NET (dev)
+    - "${HERMES_GATEWAY_URL}"   # Hermes.Gateway .NET (prod)
+
+# ------------------------------------------------------------
+# Toolsets — Habilitar apenas o necessário para faturas
+# ------------------------------------------------------------
+toolsets:
+  - core
+  - files
+  - vision          # Leitura de imagens/PDFs escaneados
+  - web             # web_extract para PDFs públicos/links
+  - memory          # Memória persistente de fornecedores
+  - agent           # execute_code, delegate_task
+
+# ------------------------------------------------------------
+# MCP Servers — Hermes.Gateway .NET como servidor de ferramentas
+# ------------------------------------------------------------
+mcp_servers:
+  hermes_dotnet:
+    url: "${HERMES_GATEWAY_URL}/mcp"
+    api_key: "${HERMES_MCP_KEY}"
+    tools:
+      - ingest_invoice
+      - get_supplier_history
+      - flag_for_review
+      - get_pending_invoices
+
+# ------------------------------------------------------------
+# Memória — Persistência de conhecimento de fornecedores
+# ------------------------------------------------------------
+memory:
+  auto_save: true
+  # Após processar 5 faturas do mesmo fornecedor,
+  # o agente cria automaticamente uma memória do padrão
+  consolidation_threshold: 5

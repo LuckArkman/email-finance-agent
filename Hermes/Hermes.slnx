@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/Core/">
+    <Project Path="Core/Hermes.Domain/Hermes.Domain.csproj" />
+    <Project Path="Core/Hermes.EventBus/Hermes.EventBus.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="Infrastructure/Hermes.Infrastructure/Hermes.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/">
+    <Project Path="Services/Hermes.Analytics/Hermes.Analytics.csproj" />
+    <Project Path="Services/Hermes.Extraction/Hermes.Extraction.csproj" />
+    <Project Path="Services/Hermes.Gateway/Hermes.Gateway.csproj" />
+    <Project Path="Services/Hermes.Identity/Hermes.Identity.csproj" />
+    <Project Path="Services/Hermes.Notifications/Hermes.Notifications.csproj" />
+    <Project Path="Services/Hermes.Reconciliation/Hermes.Reconciliation.csproj" />
+    <Project Path="Services/Hermes.ReviewQueue/Hermes.ReviewQueue.csproj" />
+    <Project Path="Services/Hermes.Vector/Hermes.Vector.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Hermes.EventBus.Tests/Hermes.EventBus.Tests.csproj" />
+    <Project Path="Tests/Hermes.Gateway.Tests/Hermes.Gateway.Tests.csproj" />
+    <Project Path="Tests/Hermes.Identity.Tests/Hermes.Identity.Tests.csproj" />
+    <Project Path="Tests/Hermes.Infrastructure.Tests/Hermes.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>

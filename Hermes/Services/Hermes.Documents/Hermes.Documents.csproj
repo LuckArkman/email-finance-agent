@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Hermes.Documents-830f5fd6-99d2-4ac1-a5ba-b37e8f98e9b8</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.23.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Hermes.Domain\Hermes.Domain.csproj" />
+    <ProjectReference Include="..\..\Core\Hermes.EventBus\Hermes.EventBus.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Hermes.Infrastructure\Hermes.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

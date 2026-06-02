@@ -1,163 +1,355 @@
-version: '3.8'
+# ============================================================
+#  Hermes — Plataforma de Processamento Financeiro B2B
+#  Stack: .NET 9 · Hermes Agent (Nous Research) · React · pgvector
+# ============================================================
+
+x-net-common: &net-common
+  restart: unless-stopped
+  networks:
+    - hermes-net
 
 services:
+
+  # ============================================================
+  # INFRAESTRUTURA
+  # ============================================================
+
   postgres:
-    image: postgres:15-alpine
-    container_name: efa_postgres
+    image: ankane/pgvector:v0.5.1
+    container_name: hermes_postgres
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=finance_agent
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hermes_db
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - hermes_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    <<: *net-common
 
-  mongodb:
-    image: mongo:6.0
-    container_name: efa_mongodb
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: hermes_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    restart: unless-stopped
+      - "5672:5672"
+      - "15672:15672"   # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    <<: *net-common
 
   redis:
-    image: redis:7.0-alpine
-    container_name: efa_redis
+    image: redis:7.2-alpine
+    container_name: hermes_redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    <<: *net-common
 
+  # ============================================================
+  # OLLAMA — LLM Local para o Hermes Agent
+  # ============================================================
   ollama:
     image: ollama/ollama:latest
-    container_name: efa_ollama
+    container_name: hermes_ollama
     ports:
       - "11434:11434"
     volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
+      - hermes_ollama_data:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: "24h"
+    # Após o arranque, fazer pull do modelo automaticamente
+    entrypoint: >
+      sh -c "ollama serve &
+             sleep 5 &&
+             ollama pull hermes3:8b &&
+             wait"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/version || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    <<: *net-common
 
-  ollama-pull-llama3:
-    image: curlimages/curl:latest
-    container_name: efa_ollama_pull
-    depends_on:
-      - ollama
-    entrypoint: [ "sh", "-c", "until curl -s ollama:11434/api/tags; do sleep 5; done; curl -X POST ollama:11434/api/pull -d '{\"name\": \"llama3\"}'; curl -X POST ollama:11434/api/pull -d '{\"name\": \"nomic-embed-text\"}'; echo 'All models pulled.'" ]
+  # ============================================================
+  # HERMES AGENT (Nous Research) — Motor de IA Autónomo
+  # Monitoriza email, extrai faturas e comunica com o .NET Gateway
+  # ============================================================
+  hermes-agent:
+    image: python:3.12-slim
+    container_name: hermes_agent
+    working_dir: /app
+    volumes:
+      - ./hermes-agent:/app                          # config, skills, hooks
+      - hermes_agent_data:/root/.hermes              # estado persistente do agente
+    environment:
+      # LLM — Ollama (serviço Docker interno)
+      OLLAMA_HOST: "http://ollama:11434"
 
-  chromadb:
-    image: chromadb/chroma:latest
-    container_name: efa_chromadb
+      # Email da caixa de faturas
+      FINANCE_EMAIL_ADDRESS: "${FINANCE_EMAIL_ADDRESS}"
+      FINANCE_EMAIL_APP_PASSWORD: "${FINANCE_EMAIL_APP_PASSWORD}"
+      FINANCE_IMAP_HOST: "${FINANCE_IMAP_HOST:-imap.gmail.com}"
+      FINANCE_SMTP_HOST: "${FINANCE_SMTP_HOST:-smtp.gmail.com}"
+
+      # Integração com o Hermes.Gateway .NET
+      HERMES_DOTNET_GATEWAY_URL: "http://hermes-gateway:8080"
+      HERMES_DOTNET_API_KEY: "${HERMES_AGENT_API_KEY}"
+
+      # API Server do próprio agente
+      API_SERVER_ENABLED: "true"
+      API_SERVER_KEY: "${HERMES_API_SERVER_KEY}"
+      API_SERVER_CORS_ORIGINS: "http://hermes-gateway:8080"
+    command: >
+      sh -c "pip install --quiet hermes-agent httpx &&
+             cp /app/config.yaml /root/.hermes/config.yaml &&
+             cp -r /app/skills /root/.hermes/skills &&
+             cp -r /app/hooks /root/.hermes/hooks &&
+             hermes gateway"
     ports:
-      - "8001:8000"
-    volumes:
-      - chroma_data:/chroma/chroma
-    environment:
-      - IS_PERSISTENT=TRUE
-      - ANONYMIZED_TELEMETRY=FALSE
-    restart: unless-stopped
+      - "8642:8642"   # API Server (status, sessions, chat)
+    depends_on:
+      ollama:
+        condition: service_healthy
+      hermes-gateway:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8642/api/status -H 'Authorization: Bearer ${HERMES_API_SERVER_KEY}' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    <<: *net-common
 
+  # ============================================================
+  # CORE SERVICES (.NET 9)
+  # ============================================================
 
-  backend:
-    build: 
-      context: ./backend
+  hermes-identity:
+    build:
+      context: ./Hermes
       dockerfile: Dockerfile
-    container_name: efa_backend
+      args:
+        SERVICE_NAME: Hermes.Identity
+    container_name: hermes_identity
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
+      Jwt__Secret: "${JWT_SECRET}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    <<: *net-common
+
+  hermes-gateway:
+    build:
+      context: ./Hermes
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: Hermes.Gateway
+    container_name: hermes_gateway
     ports:
-      - "8000:8000"
+      - "5000:8080"   # Porta pública — React + YARP + API REST
     environment:
-      - PROJECT_NAME=AI Email Finance Agent
-      - ENVIRONMENT=production
-      - DEBUG=False
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/finance_agent
-      - MONGO_URL=mongodb://mongodb:27017
-      - REDIS_URL=redis://redis:6379/0
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - CHROMADB_URL=http://chromadb:8000
-      - SENTRY_DSN=${SENTRY_DSN}
-    volumes:
-      - tmp_uploads:/tmp/uploads
-      - email_attachments:/tmp/email_attachments
-      - ./backend/src:/app/src
-      - ./backend/start.sh:/app/start.sh
-      - ./backend/entrypoint.sh:/app/entrypoint.sh
-    command: ["/app/start.sh"]
-    restart: unless-stopped
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
+
+      # Hermes Agent — proxy bidirecional
+      HermesAgent__BaseUrl: "http://hermes-agent:8642"
+      HermesAgent__ApiKey: "${HERMES_API_SERVER_KEY}"
+
+      # Chave para o Hermes Agent fazer POST de faturas
+      HERMES_AGENT_API_KEY: "${HERMES_AGENT_API_KEY}"
+
+      # MCP
+      HERMES_MCP_KEY: "${HERMES_MCP_KEY}"
+
+      # YARP routes internas
+      ReverseProxy__Clusters__hermes-identity__Destinations__destination1__Address: "http://hermes-identity:8080/"
+      ReverseProxy__Clusters__hermes-services__Destinations__destination1__Address: "http://hermes-extraction:8080/"
     depends_on:
-      - postgres
-      - mongodb
-      - redis
-      - ollama
-      - chromadb
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      hermes-identity:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    <<: *net-common
 
-
-  celery_worker:
-    build: 
-      context: ./backend
+  hermes-extraction:
+    build:
+      context: ./Hermes
       dockerfile: Dockerfile
-    container_name: efa_celery_worker
+      args:
+        SERVICE_NAME: Hermes.Extraction
+    container_name: hermes_extraction
     environment:
-      - PROJECT_NAME=AI Email Finance Agent
-      - ENVIRONMENT=production
-      - DEBUG=False
-      - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/finance_agent
-      - MONGO_URL=mongodb://mongodb:27017
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - CHROMADB_URL=http://chromadb:8000
-      - SENTRY_DSN=${SENTRY_DSN}
-    volumes:
-      - tmp_uploads:/tmp/uploads
-      - email_attachments:/tmp/email_attachments
-      - ./backend/src:/app/src
-    command: ["/app/src/start-celery.sh"]
+      ASPNETCORE_ENVIRONMENT: Production
+      EventBus__Host: rabbitmq
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
+      # Ollama para reprocessamento via Semantic Kernel
+      Ollama__Endpoint: "http://ollama:11434"
     depends_on:
-      - redis
-      - mongodb
-      - postgres
-      - ollama
-      - chromadb
-    restart: unless-stopped
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    <<: *net-common
 
+  hermes-reconciliation:
+    build:
+      context: ./Hermes
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: Hermes.Reconciliation
+    container_name: hermes_reconciliation
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      EventBus__Host: rabbitmq
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    <<: *net-common
 
+  hermes-notifications:
+    build:
+      context: ./Hermes
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: Hermes.Notifications
+    container_name: hermes_notifications
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      EventBus__Host: rabbitmq
+      ConnectionStrings__Redis: redis:6379
+      # Webhook outbound para parceiros B2B (SAP, Sage, etc.)
+      Webhooks__RetryCount: "3"
+      Webhooks__TimeoutSeconds: "30"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    <<: *net-common
+
+  hermes-analytics:
+    build:
+      context: ./Hermes
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: Hermes.Analytics
+    container_name: hermes_analytics
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      EventBus__Host: rabbitmq
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
+      ConnectionStrings__Redis: redis:6379
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    <<: *net-common
+
+  hermes-vector:
+    build:
+      context: ./Hermes
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: Hermes.Vector
+    container_name: hermes_vector
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
+      Ollama__Endpoint: "http://ollama:11434"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    <<: *net-common
+
+  hermes-review-queue:
+    build:
+      context: ./Hermes
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: Hermes.ReviewQueue
+    container_name: hermes_review_queue
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      EventBus__Host: rabbitmq
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    <<: *net-common
+
+  # ============================================================
+  # FRONTEND (React + Vite → Nginx)
+  # ============================================================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: efa_frontend
+      args:
+        # .NET Gateway como backend
+        VITE_API_URL: "http://localhost:5000/api/hermes"
+    container_name: hermes_frontend
     ports:
-      - "80:80"
-    # depends_on:
-    #   - backend
-    restart: unless-stopped
+      - "5173:80"
+    depends_on:
+      hermes-gateway:
+        condition: service_healthy
+    <<: *net-common
 
-  baileys_bridge:
-    build:
-      context: ./baileys-bridge
-      dockerfile: Dockerfile
-    container_name: efa_baileys_bridge
-    ports:
-      - "3001:3001"
-    environment:
-      - PORT=3001
-      - BACKEND_URL=http://backend:8000
-      - AUTH_DIR=/app/auth_sessions
-      - UPLOAD_DIR=/tmp/uploads
-    volumes:
-      - tmp_uploads:/tmp/uploads
-      - baileys_auth:/app/auth_sessions
-    restart: unless-stopped
-
-
+# ============================================================
+# VOLUMES
+# ============================================================
 volumes:
-  postgres_data:
-  mongo_data:
-  ollama_data:
-  tmp_uploads:
-  baileys_auth:
-  chroma_data:
-  email_attachments:
+  hermes_pg_data:
+    driver: local
+  hermes_ollama_data:
+    driver: local
+  hermes_agent_data:
+    driver: local
 
+# ============================================================
+# NETWORKS
+# ============================================================
+networks:
+  hermes-net:
+    driver: bridge

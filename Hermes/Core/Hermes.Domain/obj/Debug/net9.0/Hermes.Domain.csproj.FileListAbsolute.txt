@@ -1,0 +1,12 @@
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\bin\Debug\net9.0\Hermes.Domain.deps.json
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\bin\Debug\net9.0\Hermes.Domain.dll
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\bin\Debug\net9.0\Hermes.Domain.pdb
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\Hermes.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\Hermes.Domain.AssemblyInfoInputs.cache
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\Hermes.Domain.AssemblyInfo.cs
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\Hermes.Domain.csproj.CoreCompileInputs.cache
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\Hermes.Domain.sourcelink.json
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\Hermes.Domain.dll
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\refint\Hermes.Domain.dll
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\Hermes.Domain.pdb
+D:\email-finance-agent\Hermes\Core\Hermes.Domain\obj\Debug\net9.0\ref\Hermes.Domain.dll

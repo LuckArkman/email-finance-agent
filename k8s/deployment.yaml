@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-gateway
+  namespace: hermes-v2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hermes-gateway
+  template:
+    metadata:
+      labels:
+        app: hermes-gateway
+    spec:
+      containers:
+      - name: gateway
+        image: hermes-gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: Environment
+          value: "Production"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-gateway-svc
+  namespace: hermes-v2
+spec:
+  selector:
+    app: hermes-gateway
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer
+
+---
+# -----------------------------------------------
+# DEPLOYMENT: HERMES EXTRACTION (Base Pods)
+# -----------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-extraction
+  namespace: hermes-v2
+spec:
+  # O KEDA irá gerir as réplicas ativamente a partir daqui!
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hermes-extraction
+  template:
+    metadata:
+      labels:
+        app: hermes-extraction
+    spec:
+      containers:
+      - name: extraction
+        image: hermes-extraction:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: Environment
+          value: "Production"
+        - name: EventBus__Host
+          value: "rabbitmq-svc.hermes-v2.svc.cluster.local"
+        - name: Database__ConnectionString
+          valueFrom:
+            secretKeyRef:
+              name: hermes-db-secrets
+              key: connectionString

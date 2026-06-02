@@ -1,0 +1,8 @@
+name: post-extraction
+description: >
+  Fires after every tool call to audit invoice extraction events
+  and push telemetry to the Hermes .NET Gateway for observability.
+events:
+  - post_tool_call
+  - gateway:startup
+  - on_session_end

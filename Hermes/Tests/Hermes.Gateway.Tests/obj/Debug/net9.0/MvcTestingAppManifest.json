@@ -1,0 +1,6 @@
+{
+  "Hermes.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\email-finance-agent\\Hermes\\Core\\Hermes.Domain",
+  "Hermes.EventBus, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\email-finance-agent\\Hermes\\Core\\Hermes.EventBus",
+  "Hermes.Gateway, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\email-finance-agent\\Hermes\\Services\\Hermes.Gateway",
+  "Hermes.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\email-finance-agent\\Hermes\\Infrastructure\\Hermes.Infrastructure"
+}
