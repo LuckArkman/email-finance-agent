@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Hermes.Domain.Common;
+using Hermes.Domain.Email;
 using Hermes.Domain.Identity;
 using Hermes.Domain.Financial;
 using Hermes.Domain.Tenancy;
@@ -24,6 +25,9 @@ public class HermesDbContext : DbContext
     public DbSet<Role> Roles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
+
+    // Email
+    public DbSet<LinkedEmailAccount> LinkedEmailAccounts { get; set; }
 
     // Financial
     public DbSet<Vendor> Vendors { get; set; }

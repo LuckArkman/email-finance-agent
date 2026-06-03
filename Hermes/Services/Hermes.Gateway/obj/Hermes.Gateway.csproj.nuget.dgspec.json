@@ -137,11 +137,11 @@
           "dependencies": {
             "MassTransit": {
               "target": "Package",
-              "version": "[9.1.1, )"
+              "version": "[8.3.3, )"
             },
             "MassTransit.RabbitMQ": {
               "target": "Package",
-              "version": "[9.1.1, )"
+              "version": "[8.3.3, )"
             }
           },
           "imports": [
@@ -362,7 +362,7 @@
             },
             "MassTransit.RabbitMQ": {
               "target": "Package",
-              "version": "[9.1.1, )"
+              "version": "[8.3.3, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
@@ -372,7 +372,7 @@
             },
             "Microsoft.Extensions.Http.Polly": {
               "target": "Package",
-              "version": "[9.0.5, )"
+              "version": "[9.1.0, )"
             },
             "Microsoft.Extensions.Http.Resilience": {
               "target": "Package",

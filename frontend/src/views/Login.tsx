@@ -24,12 +24,14 @@ const Login: React.FC = () => {
         password: password
       });
 
-      const { token } = response.data;
+      // Handle both { token } (Python) and { Token } (C# .NET) response formats
+      const token = response.data.token || response.data.Token || response.data.access_token;
+      if (!token) throw new Error('No token received from server');
       
       setAuth({ id: '0000', email, tenant_id: 'default' }, token);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to authenticate. Check your credentials.');
+      setError(err.response?.data?.detail || err.response?.data?.message || 'Failed to authenticate. Check your credentials.');
     } finally {
       setLoading(false);
     }

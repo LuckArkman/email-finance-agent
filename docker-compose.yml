@@ -146,7 +146,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
-      Jwt__Secret: "${JWT_SECRET}"
+      Jwt__SecretKey: "HermesSecretKey_ChangeInProduction_MinimumLength32Chars"
+      Jwt__Issuer: "Hermes.Identity"
+      Jwt__Audience: "Hermes.Clients"
     depends_on:
       postgres:
         condition: service_healthy

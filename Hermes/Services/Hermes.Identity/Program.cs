@@ -1,9 +1,12 @@
 using Hermes.Domain.Identity;
 using Hermes.Identity.Services;
+using Hermes.Infrastructure.Extensions;
+using Hermes.Infrastructure.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,10 +15,13 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(@"/shared/keys"))
     .SetApplicationName("Hermes.EcoSystem");
 
+// Register PostgreSQL database (HermesDbContext)
+builder.Services.AddHermesDatabase(builder.Configuration);
+
 // Configurar geração e validação de tokens JWT
 builder.Services.AddSingleton<TokenGenerator>();
-builder.Services.AddSingleton<AuthService>();
-builder.Services.AddSingleton<RoleManager>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<RoleManager>();
 
 // Políticas Globais de Cookies (Anti-CSRF, HTTPS-Only)
 builder.Services.Configure<CookiePolicyOptions>(options =>
@@ -33,6 +39,13 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(SystemPermissions.RolesManage, policy => policy.RequireClaim("Permission", SystemPermissions.RolesManage));
 
 var app = builder.Build();
+
+// Auto-migrate database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<HermesDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseCookiePolicy();
 
