@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Hermes.Domain.Email;
+using Hermes.Domain.Financial;
 using Hermes.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -198,6 +199,48 @@ public class EmailController : ControllerBase
         await _db.SaveChangesAsync();
         return Ok(new { message = "Email configuration removed." });
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET /api/hermes/emails/inbox
+    // Returns a list of processed emails with their classification.
+    // Reads from the LinkedEmailAccounts log or proxies from the agent.
+    // ─────────────────────────────────────────────────────────────
+    [HttpGet("inbox")]
+    public async Task<IActionResult> GetInbox([FromQuery] int days = 30)
+    {
+        // Return invoices classified by email source as "inbox items"
+        var since = DateTime.UtcNow.AddDays(-days);
+        var invoices = await _db.Invoices
+            .Where(i => i.SourceType == "email" && i.CreatedAt >= since)
+            .OrderByDescending(i => i.CreatedAt)
+            .Take(100)
+            .ToListAsync();
+
+        return Ok(invoices.Select(i => new
+        {
+            id       = i.Id.ToString(),
+            subject  = $"Fatura {i.InvoiceNumber} - {i.VendorName}",
+            sender   = i.SourceEmail ?? "agente@hermes.local",
+            date     = i.CreatedAt.ToString("o"),
+            category = MapCategory(i.Status),
+            snippet  = $"{i.VendorName} | {i.TotalAmount:C2} | Venc. {i.DueDate?.ToString("dd/MM/yyyy") ?? "N/A"}",
+            body     = $"<p><strong>Fornecedor:</strong> {i.VendorName}</p>"
+                     + $"<p><strong>Número:</strong> {i.InvoiceNumber}</p>"
+                     + $"<p><strong>Total:</strong> {i.TotalAmount:C2} {i.Currency}</p>"
+                     + $"<p><strong>Vencimento:</strong> {i.DueDate?.ToString("dd/MM/yyyy") ?? "N/A"}</p>"
+                     + $"<p><strong>Status:</strong> {MapCategory(i.Status)}</p>"
+        }));
+    }
+
+    private static string MapCategory(InvoiceStatus status) => status switch
+    {
+        InvoiceStatus.Pending        => "accounts_payable",
+        InvoiceStatus.Paid           => "paid_bill",
+        InvoiceStatus.Overdue        => "accounts_payable",
+        InvoiceStatus.Reconciliation => "accounts_payable",
+        InvoiceStatus.ReviewRequired => "payment_receipt",
+        _                            => "non_financial"
+    };
 
     // ─────────────────────────────────────────────────────────────
     // Legacy: GET /api/hermes/emails/accounts (kept for compatibility)

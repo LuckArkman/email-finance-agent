@@ -33,6 +33,7 @@ public class HermesDbContext : DbContext
     public DbSet<Vendor> Vendors { get; set; }
     public DbSet<Invoice> Invoices { get; set; }
     public DbSet<InvoiceItem> InvoiceItems { get; set; }
+    public DbSet<Document> Documents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,7 +66,19 @@ public class HermesDbContext : DbContext
         modelBuilder.Entity<TEntity>().HasQueryFilter(e => e.TenantId == _tenantProvider.GetCurrentTenant().TenantId);
     }
 
+    public override int SaveChanges()
+    {
+        ApplyCustomConventions();
+        return base.SaveChanges();
+    }
+
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        ApplyCustomConventions();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void ApplyCustomConventions()
     {
         var currentTenantId = _tenantProvider.GetCurrentTenant().TenantId;
 
@@ -84,6 +97,5 @@ public class HermesDbContext : DbContext
                 entry.Entity.UpdatedAt = DateTime.UtcNow;
             }
         }
-        return base.SaveChangesAsync(cancellationToken);
     }
 }

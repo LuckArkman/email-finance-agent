@@ -3,8 +3,10 @@ name: invoice-extraction
 description: >
   Use this skill whenever an email contains an attached or linked financial document
   such as an invoice, receipt, purchase order, or billing statement (PDF, PNG, JPG,
-  or plain text). Extracts all structured financial data and forwards it to the
-  Hermes .NET processing pipeline for validation and reconciliation.
+  or plain text). Also activated from the whatsapp-intent-classifier when a WhatsApp
+  message is classified as INVOICE. Extracts all structured financial data and
+  forwards it to the Hermes .NET processing pipeline for persistence, classification,
+  and automatic vectorization for RAG search.
 version: 1.0.0
 author: Hermes Finance Agent
 license: MIT
@@ -64,12 +66,22 @@ From the raw text, build a JSON object with EXACTLY these fields:
   "total_amount": 0.0,
   "currency": "EUR",
   "payment_method": "string or null",
+  "payment_reference": "string or null",
   "bank_iban": "string or null",
   "notes": "string or null",
-  "source_email": "sender@domain.com",
+  "source_email": "sender@domain.com or null",
+  "source_type": "email | whatsapp | upload",
+  "filename": "nome do ficheiro ou null",
+  "confidence_score": 0.0,
   "extraction_timestamp": "ISO-8601 UTC"
 }
 ```
+
+**confidence_score:** Estima a qualidade da extracção:
+- `1.0` — documento claro, todos os campos encontrados
+- `0.8-0.99` — pequenas ambiguidades resolvidas
+- `0.6-0.79` — OCR com alguma incerteza, verificar campos
+- `< 0.6` — qualidade baixa, revisão manual recomendada
 
 **Rules — NEVER break these:**
 - Do NOT invent data. If a field is absent from the document, set it to `null`.
@@ -97,6 +109,9 @@ Use `execute_code` to deliver the payload:
 import os, httpx, json
 
 payload = { ... }  # the JSON built in Steps 3 & 4
+# Adicionar campos obrigatórios para classificação e vectorização:
+payload["source_type"] = "whatsapp"  # ou "email" conforme a plataforma de origem
+payload["confidence_score"] = 0.95   # estimar com base na qualidade do OCR
 
 gateway_url = os.environ["HERMES_DOTNET_GATEWAY_URL"]
 api_key = os.environ["HERMES_DOTNET_API_KEY"]
@@ -112,7 +127,9 @@ response = httpx.post(
 )
 response.raise_for_status()
 result = response.json()
-print(f"Invoice accepted. Tracking ID: {result.get('trackingId')}")
+print(f"Invoice accepted. Tracking ID: {result.get('trackingId')} | Status: {result.get('invoiceStatus')}")
+# NOTA: O gateway persiste automaticamente no Postgres E dispara vectorização
+# para o banco vectorial (hermes_vector) sem necessidade de acco adicional aqui.
 ```
 
 ### Step 6 — Reply to Sender

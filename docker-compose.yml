@@ -111,8 +111,14 @@ services:
       API_SERVER_ENABLED: "true"
       API_SERVER_KEY: "${HERMES_API_SERVER_KEY}"
       API_SERVER_CORS_ORIGINS: "http://hermes-gateway:8080"
+
+      # WhatsApp — Baileys bridge (built-in ao Hermes Agent)
+      WHATSAPP_ENABLED: "true"
+      WHATSAPP_MODE: "bot"
+      WHATSAPP_ALLOW_ALL_USERS: "true"
     command: >
-      sh -c "pip install --quiet hermes-agent httpx &&
+      sh -c "apt-get update -qq && apt-get install -y -qq nodejs npm curl &&
+             pip install --quiet hermes-agent httpx &&
              cp /app/config.yaml /root/.hermes/config.yaml &&
              cp -r /app/skills /root/.hermes/skills &&
              cp -r /app/hooks /root/.hermes/hooks &&

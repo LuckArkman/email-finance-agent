@@ -114,7 +114,6 @@ D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\M
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Configuration.KeyPerFile.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Configuration.UserSecrets.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Configuration.Xml.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Diagnostics.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Diagnostics.HealthChecks.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Features.dll
@@ -123,7 +122,6 @@ D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\M
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.FileProviders.Physical.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.FileSystemGlobbing.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Hosting.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Http.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Identity.Core.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Identity.Stores.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Localization.Abstractions.dll
@@ -135,7 +133,6 @@ D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\M
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Logging.EventSource.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Logging.TraceSource.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.ObjectPool.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Options.ConfigurationExtensions.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Options.DataAnnotations.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.WebEncoders.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.JSInterop.dll
@@ -456,18 +453,8 @@ D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\MassTr
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\MassTransit.RabbitMqTransport.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\Hermes.EventBus.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\Hermes.EventBus.pdb
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Configuration.Abstractions.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Configuration.Binder.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Configuration.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.DependencyInjection.Abstractions.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.DependencyInjection.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Diagnostics.Abstractions.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.FileProviders.Abstractions.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Hosting.Abstractions.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Logging.Abstractions.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Logging.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Options.dll
-D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\Microsoft.Extensions.Primitives.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\System.IO.Pipelines.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\System.Text.Encodings.Web.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\refs\System.Text.Json.dll

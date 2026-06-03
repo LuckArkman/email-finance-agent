@@ -135,3 +135,4 @@ D:\email-finance-agent\Hermes\Tests\Hermes.Identity.Tests\obj\Debug\net9.0\refin
 D:\email-finance-agent\Hermes\Tests\Hermes.Identity.Tests\obj\Debug\net9.0\Hermes.Identity.Tests.pdb
 D:\email-finance-agent\Hermes\Tests\Hermes.Identity.Tests\obj\Debug\net9.0\Hermes.Identity.Tests.genruntimeconfig.cache
 D:\email-finance-agent\Hermes\Tests\Hermes.Identity.Tests\obj\Debug\net9.0\ref\Hermes.Identity.Tests.dll
+D:\email-finance-agent\Hermes\Tests\Hermes.Identity.Tests\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.InMemory.dll

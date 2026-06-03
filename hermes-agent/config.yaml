@@ -28,6 +28,16 @@ gateway:
     # allowed_senders pode ser omitido para aceitar qualquer remetente
     poll_interval: 30  # segundos entre verificações
 
+  # WhatsApp — Baileys bridge (Node.js, sem WhatsApp Business API)
+  whatsapp:
+    enabled: true
+    mode: bot                          # "bot" (número dedicado) ou "self-chat"
+    unauthorized_dm_behavior: ignore   # Ignorar DMs de desconhecidos (número privado)
+    reply_prefix: "⚕️ *Hermes Finance*\n──────\n"  # Prefixo nas respostas
+    extra:
+      text_batch_delay_seconds: 5.0    # Juntar mensagens rápidas antes de processar
+      text_batch_split_delay_seconds: 10.0
+
 # ------------------------------------------------------------
 # API Server — Para o .NET Gateway consultar status do agente
 # ------------------------------------------------------------

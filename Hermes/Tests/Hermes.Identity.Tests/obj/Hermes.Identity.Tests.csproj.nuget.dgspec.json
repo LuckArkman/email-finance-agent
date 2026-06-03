@@ -137,11 +137,11 @@
           "dependencies": {
             "MassTransit": {
               "target": "Package",
-              "version": "[9.1.1, )"
+              "version": "[8.3.3, )"
             },
             "MassTransit.RabbitMQ": {
               "target": "Package",
-              "version": "[9.1.1, )"
+              "version": "[8.3.3, )"
             }
           },
           "imports": [
@@ -457,6 +457,10 @@
           "framework": "net9.0",
           "targetAlias": "net9.0",
           "dependencies": {
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
             "Microsoft.NET.Test.Sdk": {
               "target": "Package",
               "version": "[17.12.0, )"

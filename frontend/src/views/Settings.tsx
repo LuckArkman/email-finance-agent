@@ -16,12 +16,12 @@ import {
   Percent,
   Building2,
   Globe,
-  Euro
+  Euro,
+  Terminal
 } from 'lucide-react';
 import api from '../services/api';
 import LayoutBase from '../components/LayoutBase';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
 
 const SettingsView: React.FC = () => {
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -71,24 +71,31 @@ const SettingsView: React.FC = () => {
 
   const checkWhatsAppStatus = async () => {
     try {
-      // Baileys bridge is running on port 3001, but in production it should be proxied
-      // For local dev, we hit localhost:3001
-      const res = await axios.get('http://localhost:3001/status');
-      setWaStatus(res.data.status);
+      // Calls Gateway → Hermes Agent /api/platforms/whatsapp/status
+      const res = await api.get('/whatsapp/status');
+      setWaStatus(res.data.status ?? 'disconnected');
     } catch (err) {
-      console.log('Baileys bridge not reachable', err);
+      console.log('WhatsApp status unavailable', err);
       setWaStatus('disconnected');
     }
   };
 
-  const handleConnectWhatsApp = () => {
+  const handleConnectWhatsApp = async () => {
     setShowQrModal(true);
+    setWaStatus('connecting');
+    // Fetch pair instructions from Gateway
+    try {
+      const res = await api.get('/whatsapp/pair-instructions');
+      console.log('WhatsApp pair instructions:', res.data);
+    } catch (err) {
+      console.log('Could not fetch pair instructions', err);
+    }
     pollForQr();
   };
 
   const handleDisconnectWhatsApp = async () => {
     try {
-      await axios.post('http://localhost:3001/disconnect');
+      await api.post('/whatsapp/disconnect');
       setWaStatus('disconnected');
       setQrCodeData(null);
     } catch (err) {
@@ -101,8 +108,9 @@ const SettingsView: React.FC = () => {
     
     const interval = setInterval(async () => {
       try {
-        const res = await axios.get('http://localhost:3001/qr');
-        setWaStatus(res.data.status);
+        // Calls Gateway → Hermes Agent /api/platforms/whatsapp/qr
+        const res = await api.get('/whatsapp/qr');
+        setWaStatus(res.data.status ?? 'qr');
         if (res.data.qr) {
           setQrCodeData(res.data.qr);
         }
@@ -113,7 +121,7 @@ const SettingsView: React.FC = () => {
           setTimeout(() => setShowSuccess(false), 3000);
         }
       } catch (err) {
-        // Wait or handle error silently while polling
+        // Silent — keep polling
       }
     }, 2000);
     setPollingInterval(interval);
@@ -389,7 +397,7 @@ const SettingsView: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">Integração WhatsApp</h3>
-                  <p className="text-sm text-gray-500">Conecte sua conta via QR Code (Baileys) para receber faturas.</p>
+                  <p className="text-sm text-gray-500">Bridge Baileys nativa — sem WhatsApp Business API.</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full border border-white/5 bg-white/5">
@@ -403,6 +411,18 @@ const SettingsView: React.FC = () => {
               </div>
             </div>
 
+            {/* Terminal pairing instructions banner */}
+            <div className="flex items-start gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
+              <Terminal size={16} className="text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-amber-300">Pairing inicial via terminal</p>
+                <p className="text-xs text-gray-400 leading-relaxed font-mono bg-black/30 px-3 py-2 rounded-xl mt-1">
+                  docker exec -it hermes_agent hermes whatsapp
+                </p>
+                <p className="text-xs text-gray-500">Corre este comando uma vez para gerar o QR Code. A sessão fica guardada permanentemente.</p>
+              </div>
+            </div>
+
             <div className="p-6 rounded-2xl bg-[#0d1117] border border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className={`p-4 rounded-full ${waStatus === 'connected' ? 'bg-green-500/10 text-green-500' : 'bg-gray-800 text-gray-500'}`}>
@@ -412,28 +432,38 @@ const SettingsView: React.FC = () => {
                   <h4 className="text-white font-bold">{waStatus === 'connected' ? 'WhatsApp Ativo' : 'WhatsApp Desconectado'}</h4>
                   <p className="text-xs text-gray-500 mt-1">
                     {waStatus === 'connected' 
-                      ? 'O agente está a escutar imagens de faturas.' 
-                      : 'Ligue o telemóvel para ativar a extração OCR via WhatsApp.'}
+                      ? 'O agente está a escutar imagens de faturas via WhatsApp.' 
+                      : 'Faça o pairing via terminal e depois carregue em Verificar Estado.'}
                   </p>
                 </div>
               </div>
 
-              {waStatus === 'connected' ? (
-                <button 
-                  onClick={handleDisconnectWhatsApp}
-                  className="px-6 py-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold rounded-xl transition-all text-sm"
-                >
-                  Desconectar
-                </button>
-              ) : (
-                <button 
-                  onClick={handleConnectWhatsApp}
-                  className="px-6 py-3 bg-green-500 text-black hover:bg-green-400 font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
-                >
-                  <QrCode size={18} />
-                  Conectar Aparelho
-                </button>
-              )}
+              <div className="flex gap-2">
+                {waStatus === 'connected' ? (
+                  <button 
+                    onClick={handleDisconnectWhatsApp}
+                    className="px-6 py-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold rounded-xl transition-all text-sm"
+                  >
+                    Desconectar
+                  </button>
+                ) : (
+                  <>
+                    <button 
+                      onClick={checkWhatsAppStatus}
+                      className="px-5 py-3 bg-white/5 text-gray-400 hover:bg-white/10 font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
+                    >
+                      <RefreshCw size={16} /> Verificar Estado
+                    </button>
+                    <button 
+                      onClick={handleConnectWhatsApp}
+                      className="px-6 py-3 bg-green-500 text-black hover:bg-green-400 font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
+                    >
+                      <QrCode size={18} />
+                      Ver QR Live
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

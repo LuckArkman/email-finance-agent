@@ -10,6 +10,7 @@ import UniversalInbox from './views/UniversalInbox';
 import EmailLinking from './views/EmailLinking';
 import AgentChat from './views/AgentChat';
 import SettingsView from './views/Settings';
+import WhatsAppView from './views/WhatsApp';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -86,7 +87,7 @@ function App() {
           path="/whatsapp" 
           element={
             <ProtectedRoute>
-              <SettingsView />
+              <WhatsAppView />
             </ProtectedRoute>
           } 
         />

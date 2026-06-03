@@ -1,6 +1,7 @@
 using System;
 using Hermes.Identity.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace Hermes.Identity.Tests;
@@ -16,7 +17,15 @@ public class AuthServiceTests
         };
         IConfiguration config = new ConfigurationBuilder().AddInMemoryCollection(inMemorySettings).Build();
         var tokenGenerator = new TokenGenerator(config);
-        _authService = new AuthService(tokenGenerator);
+        
+        var options = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<Hermes.Infrastructure.Data.HermesDbContext>()
+            .UseInMemoryDatabase(databaseName: "Test_Db")
+            .Options;
+        var mockTenantProvider = new Moq.Mock<Hermes.Domain.Tenancy.ITenantProvider>();
+        mockTenantProvider.Setup(m => m.GetCurrentTenant()).Returns(new Hermes.Domain.Tenancy.TenantContext { TenantId = Guid.NewGuid() });
+        var dbContext = new Hermes.Infrastructure.Data.HermesDbContext(options, mockTenantProvider.Object);
+        
+        _authService = new AuthService(tokenGenerator, dbContext);
     }
 
     [Fact]

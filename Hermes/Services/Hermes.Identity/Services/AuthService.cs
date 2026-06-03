@@ -19,6 +19,7 @@ public class AuthService
 
     public User Register(string email, string password, string firstName)
     {
+        email = email.ToLowerInvariant();
         // Check if user already exists
         var existing = _db.Users.FirstOrDefault(u => u.Email == email);
         if (existing != null)
@@ -40,6 +41,7 @@ public class AuthService
 
     public string Login(string email, string password)
     {
+        email = email.ToLowerInvariant();
         var user = _db.Users.FirstOrDefault(u => u.Email == email);
         if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
         {
