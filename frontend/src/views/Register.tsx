@@ -22,7 +22,7 @@ const Register: React.FC = () => {
       await api.post('/auth/register', {
         email,
         password,
-        tenant_name: tenantName
+        firstName: tenantName
       });
 
       setSuccess(true);

@@ -77,6 +77,8 @@ rolesGroup.MapPost("/assign", (RoleManager roleManager, AssignRoleRequest reques
     return Results.Ok();
 });
 
+app.MapGet("/health", () => Results.Ok(new { Status = "Healthy" }));
+
 app.Run();
 
 public record RegisterRequest(string Email, string Password, string FirstName);

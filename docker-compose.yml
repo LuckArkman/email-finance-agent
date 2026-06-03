@@ -73,14 +73,9 @@ services:
       - hermes_ollama_data:/root/.ollama
     environment:
       OLLAMA_KEEP_ALIVE: "24h"
-    # Após o arranque, fazer pull do modelo automaticamente
-    entrypoint: >
-      sh -c "ollama serve &
-             sleep 5 &&
-             ollama pull hermes3:8b &&
-             wait"
+    entrypoint: ["ollama", "serve"]
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/version || exit 1"]
+      test: ["CMD-SHELL", "ollama list || exit 1"]
       interval: 30s
       timeout: 15s
       retries: 5
@@ -156,7 +151,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -211,7 +206,7 @@ services:
     container_name: hermes_extraction
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      EventBus__Host: rabbitmq
+      RabbitMQ__Host: rabbitmq
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
       # Ollama para reprocessamento via Semantic Kernel
       Ollama__Endpoint: "http://ollama:11434"
@@ -231,7 +226,7 @@ services:
     container_name: hermes_reconciliation
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      EventBus__Host: rabbitmq
+      RabbitMQ__Host: rabbitmq
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
     depends_on:
       rabbitmq:
@@ -249,7 +244,7 @@ services:
     container_name: hermes_notifications
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      EventBus__Host: rabbitmq
+      RabbitMQ__Host: rabbitmq
       ConnectionStrings__Redis: redis:6379
       # Webhook outbound para parceiros B2B (SAP, Sage, etc.)
       Webhooks__RetryCount: "3"
@@ -270,7 +265,7 @@ services:
     container_name: hermes_analytics
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      EventBus__Host: rabbitmq
+      RabbitMQ__Host: rabbitmq
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
       ConnectionStrings__Redis: redis:6379
     depends_on:
@@ -309,7 +304,7 @@ services:
     container_name: hermes_review_queue
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      EventBus__Host: rabbitmq
+      RabbitMQ__Host: rabbitmq
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
     depends_on:
       rabbitmq:

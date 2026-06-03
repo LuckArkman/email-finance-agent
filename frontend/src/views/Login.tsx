@@ -19,18 +19,14 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      // Form data as required by FastAPI OAuth2
-      const formData = new FormData();
-      formData.append('username', email);
-      formData.append('password', password);
-
-      const response = await api.post('/auth/access-token', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const response = await api.post('/auth/login', {
+        email: email,
+        password: password
       });
 
-      const { access_token, user_id, tenant_id } = response.data;
+      const { token } = response.data;
       
-      setAuth({ id: user_id, email, tenant_id }, access_token);
+      setAuth({ id: '0000', email, tenant_id: 'default' }, token);
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to authenticate. Check your credentials.');

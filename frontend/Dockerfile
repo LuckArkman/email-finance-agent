@@ -11,7 +11,8 @@ RUN npm install --force
 COPY . .
 
 # Build the application for production
-ENV VITE_API_URL=/api/v1
+ARG VITE_API_URL="http://localhost:5000/api/hermes"
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Stage 2: Serve the application using Nginx
