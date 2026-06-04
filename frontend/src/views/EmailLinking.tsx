@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import LayoutBase from '../components/LayoutBase';
 import api from '../services/api';
+import { useEffect } from 'react';
 
 // IMAP/SMTP defaults per provider
 const PROVIDER_DEFAULTS: Record<string, { imapHost: string; smtpHost: string }> = {
@@ -54,6 +55,22 @@ const EmailLinking: React.FC = () => {
     setError('');
     setStep(2);
   };
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await api.get('/emails/status');
+        if (res.data && res.data.configured) {
+          setEmail(res.data.emailAddress);
+          setSelectedProvider(res.data.provider || 'other');
+          setSuccess(true);
+        }
+      } catch (err) {
+        console.error('Failed to fetch email status', err);
+      }
+    };
+    fetchStatus();
+  }, []);
 
   const handleConfigure = async () => {
     if (!email || !appPassword || !imapHost || !smtpHost) {

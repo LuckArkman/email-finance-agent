@@ -42,7 +42,7 @@ public class WhatsAppController : ControllerBase
         try
         {
             var client = CreateAgentClient();
-            var response = await client.GetAsync($"{AgentBaseUrl}/api/platforms/whatsapp/status");
+            var response = await client.GetAsync($"http://baileys-bridge:3001/status");
 
             if (response.IsSuccessStatusCode)
             {
@@ -70,20 +70,20 @@ public class WhatsAppController : ControllerBase
         try
         {
             var client = CreateAgentClient();
-            var response = await client.GetAsync($"{AgentBaseUrl}/api/platforms/whatsapp/qr");
+            var response = await client.GetAsync($"http://baileys-bridge:3001/qr");
 
-            if (response.IsSuccessStatusCode)
+            var content = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                var content = await response.Content.ReadAsStringAsync();
                 return Content(content, "application/json");
             }
 
-            return Ok(new { status = "waiting", qr = (string?)null });
+            return Ok(new { status = "disconnected", qr = (string?)null });
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not retrieve WhatsApp QR code from Hermes Agent.");
-            return Ok(new { status = "waiting", qr = (string?)null });
+            _logger.LogWarning(ex, "Could not retrieve WhatsApp QR code from Baileys Bridge.");
+            return Ok(new { status = "disconnected", qr = (string?)null });
         }
     }
 
@@ -97,17 +97,14 @@ public class WhatsAppController : ControllerBase
         try
         {
             var client = CreateAgentClient();
-            var response = await client.PostAsync($"{AgentBaseUrl}/api/platforms/whatsapp/disconnect", null);
+            var response = await client.PostAsync($"http://baileys-bridge:3001/disconnect", null);
 
-            if (response.IsSuccessStatusCode)
-                return Ok(new { message = "WhatsApp disconnected successfully." });
-
-            return StatusCode(502, new { detail = "Agent returned an error during disconnect." });
+            return Ok(new { success = response.IsSuccessStatusCode });
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not disconnect WhatsApp on Hermes Agent.");
-            return StatusCode(503, new { detail = "Agent not reachable." });
+            _logger.LogError(ex, "Error disconnecting WhatsApp from Baileys Bridge.");
+            return StatusCode(500, new { error = "Failed to disconnect WhatsApp" });
         }
     }
 

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Hermes.EventBus")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+691f0c4106479ad080aff149ca7d427bf5fe26e8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+80bc96c800995c0f951100ac0ece8acabf20a98c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Hermes.EventBus")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Hermes.EventBus")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

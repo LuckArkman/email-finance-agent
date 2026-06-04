@@ -139,6 +139,24 @@ services:
     <<: *net-common
 
   # ============================================================
+  # WHATSAPP BRIDGE (Baileys Node.js)
+  # ============================================================
+  baileys-bridge:
+    build:
+      context: ./baileys-bridge
+    container_name: hermes_whatsapp_bridge
+    environment:
+      # URL for the bridge to send incoming files (e.g. to the python agent or gateway)
+      BACKEND_URL: "http://hermes-agent:8642"
+    ports:
+      - "3001:3001"
+    volumes:
+      - hermes_whatsapp_data:/app/auth_sessions
+    restart: unless-stopped
+    networks:
+      - hermes-net
+
+  # ============================================================
   # CORE SERVICES (.NET 9)
   # ============================================================
 
@@ -348,6 +366,8 @@ volumes:
   hermes_ollama_data:
     driver: local
   hermes_agent_data:
+    driver: local
+  hermes_whatsapp_data:
     driver: local
 
 # ============================================================

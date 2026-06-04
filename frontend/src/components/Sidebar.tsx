@@ -13,10 +13,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
-  Lock
+  Lock,
+  LogOut
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 interface SidebarProps {
@@ -26,7 +27,8 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggle }) => {
   const location = useLocation();
-  const {} = useAuthStore();
+  const navigate = useNavigate();
+  const { logout } = useAuthStore();
   
   const sections = [
     {
@@ -129,15 +131,29 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, toggle }) => {
       </nav>
 
       <div className="p-4 mt-auto">
-         <div className="bg-white/5 p-3 rounded-2xl border border-white/10 flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-               <Zap size={22} fill="white" />
+         <div className="bg-white/5 p-3 rounded-2xl border border-white/10 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                 <Zap size={22} fill="white" />
+              </div>
+              {!collapsed && (
+                <div className="flex flex-col overflow-hidden text-white">
+                   <span className="font-bold text-[12px] truncate">Gestor Sustentacódigo</span>
+                   <span className="text-[10px] text-green-500 font-medium">Sincronizado</span>
+                </div>
+              )}
             </div>
             {!collapsed && (
-              <div className="flex flex-col overflow-hidden text-white">
-                 <span className="font-bold text-[12px] truncate">Gestor Sustentacódigo</span>
-                 <span className="text-[10px] text-green-500 font-medium">Sincronizado</span>
-              </div>
+              <button 
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+                className="text-gray-400 hover:text-red-400 p-2 transition-colors rounded-lg hover:bg-white/5"
+                title="Sair do Sistema"
+              >
+                <LogOut size={16} />
+              </button>
             )}
          </div>
       </div>

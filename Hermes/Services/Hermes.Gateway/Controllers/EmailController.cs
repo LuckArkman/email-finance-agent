@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MailKit.Net.Imap;
+using MimeKit;
 
 namespace Hermes.Gateway.Controllers;
 
@@ -208,28 +210,64 @@ public class EmailController : ControllerBase
     [HttpGet("inbox")]
     public async Task<IActionResult> GetInbox([FromQuery] int days = 30)
     {
-        // Return invoices classified by email source as "inbox items"
-        var since = DateTime.UtcNow.AddDays(-days);
-        var invoices = await _db.Invoices
-            .Where(i => i.SourceType == "email" && i.CreatedAt >= since)
-            .OrderByDescending(i => i.CreatedAt)
-            .Take(100)
-            .ToListAsync();
+        var account = await _db.LinkedEmailAccounts
+            .Where(a => a.IsActive)
+            .OrderByDescending(a => a.UpdatedAt)
+            .FirstOrDefaultAsync();
 
-        return Ok(invoices.Select(i => new
+        if (account == null || string.IsNullOrEmpty(account.RefreshToken))
+            return Ok(new object[] { });
+
+        var parts = account.RefreshToken.Split('|');
+        if (parts.Length < 2) return Ok(new object[] { });
+
+        string imapHost = parts[0];
+        if (!int.TryParse(parts[1], out int imapPort)) imapPort = 993;
+
+        var emails = new System.Collections.Generic.List<object>();
+        try
         {
-            id       = i.Id.ToString(),
-            subject  = $"Fatura {i.InvoiceNumber} - {i.VendorName}",
-            sender   = i.SourceEmail ?? "agente@hermes.local",
-            date     = i.CreatedAt.ToString("o"),
-            category = MapCategory(i.Status),
-            snippet  = $"{i.VendorName} | {i.TotalAmount:C2} | Venc. {i.DueDate?.ToString("dd/MM/yyyy") ?? "N/A"}",
-            body     = $"<p><strong>Fornecedor:</strong> {i.VendorName}</p>"
-                     + $"<p><strong>Número:</strong> {i.InvoiceNumber}</p>"
-                     + $"<p><strong>Total:</strong> {i.TotalAmount:C2} {i.Currency}</p>"
-                     + $"<p><strong>Vencimento:</strong> {i.DueDate?.ToString("dd/MM/yyyy") ?? "N/A"}</p>"
-                     + $"<p><strong>Status:</strong> {MapCategory(i.Status)}</p>"
-        }));
+            using var client = new ImapClient();
+            client.ServerCertificateValidationCallback = (s, c, h, e) => true; // Bypass dev cert issues
+            await client.ConnectAsync(imapHost, imapPort, MailKit.Security.SecureSocketOptions.SslOnConnect);
+            await client.AuthenticateAsync(account.EmailAddress, account.AccessToken);
+
+            var inbox = client.Inbox;
+            await inbox.OpenAsync(MailKit.FolderAccess.ReadOnly);
+
+            // Fetch emails based on days requested (approximate 3 per day, max 200)
+            int count = inbox.Count;
+            int fetchCount = System.Math.Min(days * 3, count);
+            fetchCount = System.Math.Min(fetchCount, 200); // hard limit to avoid timeouts
+            int start = count - 1;
+            int end = count - fetchCount;
+
+            for (int i = start; i >= end; i--)
+            {
+                var message = await inbox.GetMessageAsync(i);
+                var body = message.HtmlBody ?? message.TextBody ?? "";
+                var snippet = message.TextBody?.Substring(0, System.Math.Min(100, message.TextBody.Length)) ?? "";
+
+                emails.Add(new
+                {
+                    id = message.MessageId ?? Guid.NewGuid().ToString(),
+                    subject = message.Subject,
+                    sender = message.From.ToString(),
+                    date = message.Date.ToString("o"),
+                    category = "accounts_payable", // Shows as 'Conta a Pagar'
+                    snippet = snippet.Replace("\n", " ").Replace("\r", ""),
+                    body = body
+                });
+            }
+
+            await client.DisconnectAsync(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching emails from IMAP");
+        }
+
+        return Ok(emails);
     }
 
     private static string MapCategory(InvoiceStatus status) => status switch

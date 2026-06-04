@@ -109,16 +109,16 @@ const UniversalInbox: React.FC = () => {
   const [selectedEmail, setSelectedEmail] = useState<SimpleEmail | null>(null);
   const [filterDays, setFilterDays] = useState(30);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
   
   const fetchEmails = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/emails/inbox');
+      const res = await api.get(`/emails/inbox?days=${filterDays}`);
       const allEmails = res.data || [];
-      const financialEmails = allEmails.filter((email: SimpleEmail) => 
-        email.category !== 'Non-Financial' && email.category !== 'non_financial'
-      );
-      setEmails(financialEmails);
+      setEmails(allEmails);
+      setCurrentPage(1);
     } catch (err) {
       console.error("Failed to fetch emails", err);
     } finally {
@@ -128,7 +128,19 @@ const UniversalInbox: React.FC = () => {
 
   useEffect(() => {
     fetchEmails();
-  }, []);
+  }, [filterDays]);
+
+  const totalPages = Math.ceil(emails.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentEmails = emails.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
+  
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
 
   return (
     <LayoutBase>
@@ -152,6 +164,9 @@ const UniversalInbox: React.FC = () => {
                      <option value={10}>10 dias</option>
                      <option value={15}>15 dias</option>
                      <option value={30}>30 dias</option>
+                     <option value={60}>60 dias</option>
+                     <option value={90}>90 dias</option>
+                     <option value={120}>120 dias</option>
                   </select>
                </div>
                <button 
@@ -216,7 +231,7 @@ const UniversalInbox: React.FC = () => {
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-gray-50">
-                        {emails.map((email) => (
+                        {currentEmails.map((email) => (
                           <tr key={email.id} className="group hover:bg-gray-50/50 transition-all cursor-pointer">
                              <td className="p-6 pl-10 border-r border-gray-50/50">
                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
@@ -262,10 +277,22 @@ const UniversalInbox: React.FC = () => {
                   </table>
                   
                   <div className="p-8 bg-gray-50/30 flex justify-between items-center px-10 border-t border-gray-50">
-                     <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Total: {emails.length} capturas automáticas</span>
+                     <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Total: {emails.length} capturas automáticas | Página {currentPage} de {totalPages || 1}</span>
                      <div className="flex space-x-3">
-                        <button className="px-6 py-2.5 bg-white border border-gray-200 rounded-2xl text-[12px] font-black text-gray-300 opacity-50 cursor-not-allowed">Anterior</button>
-                        <button className="px-6 py-2.5 bg-white border border-gray-200 rounded-2xl text-[12px] font-black text-gray-300 opacity-50 cursor-not-allowed">Próximo</button>
+                        <button 
+                          onClick={handlePrevPage}
+                          disabled={currentPage === 1}
+                          className={`px-6 py-2.5 bg-white border border-gray-200 rounded-2xl text-[12px] font-black transition-all ${currentPage === 1 ? 'text-gray-300 opacity-50 cursor-not-allowed' : 'text-gray-600 hover:border-blue-500/20 shadow-sm hover:bg-gray-50'}`}
+                        >
+                          Anterior
+                        </button>
+                        <button 
+                          onClick={handleNextPage}
+                          disabled={currentPage === totalPages || totalPages === 0}
+                          className={`px-6 py-2.5 bg-white border border-gray-200 rounded-2xl text-[12px] font-black transition-all ${currentPage === totalPages || totalPages === 0 ? 'text-gray-300 opacity-50 cursor-not-allowed' : 'text-gray-600 hover:border-blue-500/20 shadow-sm hover:bg-gray-50'}`}
+                        >
+                          Próximo
+                        </button>
                      </div>
                   </div>
                </div>

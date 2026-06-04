@@ -76,10 +76,18 @@ async function startWhatsApp() {
 
     if (connection === 'close') {
       const code = lastDisconnect?.error?.output?.statusCode;
-      const shouldReconnect = code !== DisconnectReason.loggedOut;
+      const isLoggedOut = code === DisconnectReason.loggedOut;
       state.status = 'disconnected';
-      console.log(`[baileys] Connection closed (code=${code}). Reconnect=${shouldReconnect}`);
-      if (shouldReconnect) {
+      console.log(`[baileys] Connection closed (code=${code}). isLoggedOut=${isLoggedOut}`);
+      
+      if (isLoggedOut) {
+        console.log('[baileys] Logged out from WhatsApp. Clearing session and restarting...');
+        try {
+          fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+          fs.mkdirSync(AUTH_DIR, { recursive: true });
+        } catch (err) {}
+        setTimeout(startWhatsApp, 2000);
+      } else {
         setTimeout(startWhatsApp, 3000);
       }
     }

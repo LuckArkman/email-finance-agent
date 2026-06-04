@@ -14,6 +14,8 @@ import {
 import LayoutBase from '../components/LayoutBase';
 import api from '../services/api';
 
+import QRCode from 'react-qr-code';
+
 type WaStatus = 'disconnected' | 'connecting' | 'qr' | 'connected';
 
 const WhatsAppView: React.FC = () => {
@@ -72,17 +74,19 @@ const WhatsAppView: React.FC = () => {
     stopPolling();
   };
 
-  const statusColors: Record<WaStatus, string> = {
+  const statusColors: Record<string, string> = {
     connected:    'text-green-400  bg-green-500/10  border-green-500/20',
     qr:           'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
     connecting:   'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
+    waiting:      'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
     disconnected: 'text-red-400    bg-red-500/10    border-red-500/20',
   };
 
-  const statusLabel: Record<WaStatus, string> = {
+  const statusLabel: Record<string, string> = {
     connected:    '● Conectado',
     qr:           '⟳ A aguardar scan...',
     connecting:   '⟳ A ligar...',
+    waiting:      '⟳ A aguardar QR Code...',
     disconnected: '✕ Desconectado',
   };
 
@@ -161,15 +165,7 @@ const WhatsAppView: React.FC = () => {
             </div>
           </div>
 
-          {/* QR Code display */}
-          {qrCode && (
-            <div className="flex flex-col items-center gap-4 p-6 bg-white rounded-3xl">
-              <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64 object-contain" />
-              <p className="text-xs text-gray-500 font-medium">
-                WhatsApp → Definições → Dispositivos Associados → Associar Dispositivo
-              </p>
-            </div>
-          )}
+          {/* QR Code display (Moved to Modal) */}
 
           {/* Action buttons */}
           <div className="flex gap-3 pt-2">
@@ -219,6 +215,47 @@ const WhatsAppView: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Modal View QR Code */}
+      {polling && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+           <div className="bg-[#121212] w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl border border-white/10 flex flex-col p-8 items-center text-center space-y-6">
+              <div className="w-16 h-16 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center mb-2">
+                 <QrCode size={32} />
+              </div>
+              
+              <h3 className="text-2xl font-bold text-white">
+                {qrCode ? 'Escanear QR Code' : 'A gerar QR Code...'}
+              </h3>
+              
+              {qrCode ? (
+                <div className="bg-white p-4 rounded-2xl">
+                  {qrCode.startsWith('http') || qrCode.startsWith('data:image') ? (
+                    <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64 object-contain" />
+                  ) : (
+                    <QRCode value={qrCode} size={256} className="w-64 h-64" />
+                  )}
+                </div>
+              ) : (
+                <div className="w-64 h-64 flex flex-col items-center justify-center bg-white/5 rounded-2xl border border-white/10">
+                  <RefreshCw size={32} className="animate-spin text-green-500 mb-4" />
+                  <p className="text-sm text-gray-400">Aguardando Hermes Agent...</p>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 font-medium max-w-[250px]">
+                Abra o WhatsApp → Definições → Dispositivos Associados → Associar Dispositivo
+              </p>
+
+              <button 
+                onClick={stopPolling}
+                className="w-full px-6 py-4 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white font-bold rounded-2xl transition-all border border-white/10 mt-4"
+              >
+                Cancelar
+              </button>
+           </div>
+        </div>
+      )}
     </LayoutBase>
   );
 };

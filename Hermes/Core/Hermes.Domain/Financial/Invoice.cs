@@ -20,6 +20,7 @@ public class Invoice : BaseEntity
     // Status e classificação
     public InvoiceStatus Status        { get; set; } = InvoiceStatus.Draft;
     public double   ConfidenceScore    { get; set; } = 1.0;  // Score OCR 0.0-1.0
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public string?  Category           { get; set; }  // Categoria do documento
 
     // Fornecedor (desnormalizado para queries rápidas)

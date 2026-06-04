@@ -478,3 +478,6 @@ D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\Polly.
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\Polly.Extensions.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\Polly.Extensions.Http.dll
 D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\Polly.RateLimiting.dll
+D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\BouncyCastle.Cryptography.dll
+D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\MailKit.dll
+D:\email-finance-agent\Hermes\Tests\Hermes.Gateway.Tests\bin\Debug\net9.0\MimeKit.dll

@@ -64,11 +64,62 @@ namespace Hermes.Infrastructure.Data.Migrations
                     b.ToTable("LinkedEmailAccounts");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Financial.Document", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("S3Key")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("SizeInBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SourceMessageId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("StorageProvider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("Documents");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Financial.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<double>("ConfidenceScore")
+                        .HasColumnType("double precision");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -81,13 +132,46 @@ namespace Hermes.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Filename")
+                        .HasColumnType("text");
+
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool>("IsVectorized")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("IssueDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("IvaAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("IvaRate")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentEvidenceUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PaymentReference")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RawDocumentUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SourceType")
+                        .HasColumnType("text");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -104,8 +188,17 @@ namespace Hermes.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("VectorId")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("VendorId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("VendorName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("VendorTaxId")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -317,6 +410,15 @@ namespace Hermes.Infrastructure.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserRoles");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Financial.Document", b =>
+                {
+                    b.HasOne("Hermes.Domain.Financial.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId");
+
+                    b.Navigation("Invoice");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Financial.Invoice", b =>
