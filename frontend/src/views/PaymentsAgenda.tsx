@@ -5,7 +5,6 @@ import {
   Calendar as CalendarIcon,
   Euro,
   AlertTriangle,
-  TrendingDown,
   RefreshCw,
   X,
   FileText,
@@ -139,6 +138,7 @@ const PaymentsAgenda: React.FC = () => {
 
   const totalPending   = allInvoices.filter(i => i.status === 'pending').reduce((s, i) => s + (i.total_amount || 0), 0);
   const totalOverdue   = allInvoices.filter(i => i.status === 'overdue' || i.status === 'reconciliation').reduce((s, i) => s + (i.total_amount || 0), 0);
+  const totalMonth     = allInvoices.reduce((s, i) => s + (i.total_amount || 0), 0);
   const countTotal     = allInvoices.length;
   const countPending   = allInvoices.filter(i => i.status === 'pending').length;
   const countOverdue   = allInvoices.filter(i => i.status === 'overdue').length;
@@ -151,8 +151,7 @@ const PaymentsAgenda: React.FC = () => {
       if (!a.due_date) return 1;
       if (!b.due_date) return -1;
       return a.due_date.localeCompare(b.due_date);
-    })
-    .slice(0, 8);
+    });
 
   const selectedInvoices = selectedDay ? (calendarData[selectedDay] || []) : [];
 
@@ -277,26 +276,26 @@ const PaymentsAgenda: React.FC = () => {
                     </div>
 
                     {/* Invoice dots with vendor names */}
-                    <div className="flex-1 space-y-0.5">
+                    <div className="flex-1 space-y-1 mt-1">
                       {dayInvoices.slice(0, 3).map((inv, i) => {
                         const sc = STATUS_CONFIG[inv.status];
                         return (
-                          <div key={i} className="flex items-center gap-1 overflow-hidden">
-                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sc?.dot || 'bg-gray-300'}`} />
-                            <p className="text-[8px] font-bold text-gray-700 truncate leading-tight">
+                          <div key={i} className={`flex items-center gap-1 overflow-hidden px-1.5 py-0.5 rounded ${sc?.badgeBg || 'bg-gray-100'}`}>
+                            <span className={`w-1 h-1 rounded-full flex-shrink-0 ${sc?.dot || 'bg-gray-400'}`} />
+                            <p className={`text-[9px] font-bold truncate leading-tight ${sc?.textColor || 'text-gray-700'}`}>
                               {inv.vendor_name || 'Fatura'}
                             </p>
                           </div>
                         );
                       })}
                       {dayInvoices.length > 3 && (
-                        <p className="text-[8px] font-black text-blue-500 pl-2.5">+{dayInvoices.length - 3} mais</p>
+                        <p className="text-[8px] font-black text-blue-500 pl-1 pt-0.5">+{dayInvoices.length - 3} mais</p>
                       )}
                     </div>
 
                     {/* Total amount if has invoices */}
                     {dayInvoices.length > 0 && (
-                      <div className={`text-[7px] font-black mt-1 ${
+                      <div className={`text-[9px] font-black mt-1 text-right ${
                         urgency === 'overdue' ? 'text-red-600' :
                         urgency === 'today' ? 'text-orange-600' :
                         urgency === 'pending' ? 'text-blue-600' : 'text-gray-500'
@@ -347,7 +346,7 @@ const PaymentsAgenda: React.FC = () => {
                 <div className="p-5 rounded-[24px] border border-blue-100 bg-blue-50">
                   <div className="flex items-center justify-between mb-3">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white shadow-sm border border-blue-100">
-                      <Euro size={18} className="text-blue-600" />
+                      <FileText size={18} className="text-blue-600" />
                     </div>
                     <span className="text-[9px] font-black uppercase tracking-widest text-blue-400">Total em Aberto</span>
                   </div>
@@ -369,15 +368,15 @@ const PaymentsAgenda: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-5 rounded-[24px] border border-orange-100 bg-orange-50">
+                <div className="p-5 rounded-[24px] border border-gray-200 bg-white shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white shadow-sm border border-orange-100">
-                      <TrendingDown size={18} className="text-orange-600" />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-50 shadow-sm border border-gray-200">
+                      <Euro size={18} className="text-gray-700" />
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-orange-400">Previsão Fluxo</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">Total do Mês</span>
                   </div>
-                  <p className="text-2xl font-black text-orange-700">{fmt(-(totalPending + totalOverdue))}</p>
-                  <p className="text-[10px] font-bold text-orange-500 mt-1">{countTotal} fatura(s) no total este mês</p>
+                  <p className="text-2xl font-black text-gray-900">{fmt(totalMonth)}</p>
+                  <p className="text-[10px] font-bold text-gray-500 mt-1">{countTotal} fatura(s) no total este mês</p>
                 </div>
               </div>
             </div>
@@ -388,7 +387,7 @@ const PaymentsAgenda: React.FC = () => {
               {upcomingBills.length === 0 && !loading && (
                 <div className="text-center py-8 opacity-40 italic text-sm text-gray-500">Nenhuma conta este mês.</div>
               )}
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-2 pb-4 no-scrollbar">
                 {upcomingBills.map((inv, i) => {
                   const daysLeft = getDaysUntil(inv.due_date);
                   const sc = STATUS_CONFIG[inv.status] || STATUS_CONFIG.pending;
@@ -397,10 +396,13 @@ const PaymentsAgenda: React.FC = () => {
                   return (
                     <div
                       key={i}
-                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all hover:shadow-sm ${
-                        isOverdue ? 'bg-red-50 border-red-100' :
-                        isToday ? 'bg-orange-50 border-orange-100' :
-                        'bg-gray-50 border-gray-100 hover:bg-gray-100/70'
+                      onClick={() => {
+                        if (inv.due_date) setSelectedDay(inv.due_date);
+                      }}
+                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all hover:shadow-md cursor-pointer ${
+                        isOverdue ? 'bg-red-50 border-red-100 hover:border-red-300' :
+                        isToday ? 'bg-orange-50 border-orange-100 hover:border-orange-300' :
+                        'bg-gray-50 border-gray-100 hover:bg-white hover:border-blue-200'
                       }`}
                     >
                       {/* Day badge */}

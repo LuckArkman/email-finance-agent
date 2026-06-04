@@ -87,7 +87,9 @@ services:
   # Monitoriza email, extrai faturas e comunica com o .NET Gateway
   # ============================================================
   hermes-agent:
-    image: python:3.12-slim
+    build:
+      context: ./hermes-agent
+      dockerfile: Dockerfile
     container_name: hermes_agent
     working_dir: /app
     volumes:
@@ -116,13 +118,6 @@ services:
       WHATSAPP_ENABLED: "true"
       WHATSAPP_MODE: "bot"
       WHATSAPP_ALLOW_ALL_USERS: "true"
-    command: >
-      sh -c "apt-get update -qq && apt-get install -y -qq nodejs npm curl &&
-             pip install --quiet hermes-agent httpx &&
-             cp /app/config.yaml /root/.hermes/config.yaml &&
-             cp -r /app/skills /root/.hermes/skills &&
-             cp -r /app/hooks /root/.hermes/hooks &&
-             hermes gateway"
     ports:
       - "8642:8642"   # API Server (status, sessions, chat)
     depends_on:

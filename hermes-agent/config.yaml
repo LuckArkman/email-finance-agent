@@ -5,7 +5,7 @@
 # LLM Provider — Local Ollama (swap for nous-portal in prod)
 # ------------------------------------------------------------
 provider: ollama
-model: hermes3:8b
+model: qwen2.5
 # Para produção com Nous Portal:
 # provider: nous-portal
 # model: hermes-3-llama-3.1-70b
