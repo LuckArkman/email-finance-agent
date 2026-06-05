@@ -113,6 +113,7 @@ services:
       
       # Integration — Gateway .NET
       HERMES_DOTNET_GATEWAY_URL: "http://hermes-gateway:8080"
+      API_SERVER_HOST: "0.0.0.0"
       HERMES_DOTNET_API_KEY: "${HERMES_AGENT_API_KEY}"
       
       # MCP Server — .NET Gateway
