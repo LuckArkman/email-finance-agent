@@ -8,7 +8,7 @@ provider: ollama
 model: qwen2.5
 # Para produção com Nous Portal:
 # provider: nous-portal
-# model: hermes-3-llama-3.1-70b
+# model: qwen2.5
 
 # ------------------------------------------------------------
 # Gateway — Email Inbox (IMAP/SMTP)

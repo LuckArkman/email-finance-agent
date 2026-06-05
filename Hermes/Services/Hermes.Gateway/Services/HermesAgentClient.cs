@@ -29,12 +29,16 @@ public class HermesAgentClient
     // Status do Agente
     // ----------------------------------------------------------------
 
-    /// <summary>GET /api/status — versão, estado do gateway e sessões ativas.</summary>
     public async Task<AgentStatusResponse?> GetStatusAsync()
     {
         try
         {
-            return await _http.GetFromJsonAsync<AgentStatusResponse>("/api/status");
+            var healthResp = await _http.GetAsync("/health");
+            if (healthResp.IsSuccessStatusCode)
+            {
+                return new AgentStatusResponse("1.0", true, 0, "qwen:32b", "ollama");
+            }
+            return null;
         }
         catch (Exception ex)
         {

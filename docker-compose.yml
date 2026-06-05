@@ -62,15 +62,15 @@ services:
     <<: *net-common
 
   # ============================================================
-  # OLLAMA — LLM Local para o Hermes Agent
+  # MOTOR QWEN3 (Usando Ollama como host)
   # ============================================================
-  ollama:
+  qwen-engine:
     image: ollama/ollama:latest
-    container_name: hermes_ollama
+    container_name: hermes_qwen_engine
     ports:
       - "11434:11434"
     volumes:
-      - hermes_ollama_data:/root/.ollama
+      - hermes_qwen_data:/root/.ollama
     environment:
       OLLAMA_KEEP_ALIVE: "24h"
     entrypoint: ["ollama", "serve"]
@@ -80,6 +80,18 @@ services:
       timeout: 15s
       retries: 5
       start_period: 60s
+    <<: *net-common
+
+  qwen-puller:
+    image: curlimages/curl:latest
+    container_name: hermes_qwen_puller
+    depends_on:
+      qwen-engine:
+        condition: service_healthy
+    command: >
+      sh -c "echo 'Iniciando download do Qwen 3 (qwen2.5)... Isso pode demorar!' && 
+             curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5\"}' -s && 
+             echo 'Download concluído!'"
     <<: *net-common
 
   # ============================================================
@@ -97,23 +109,28 @@ services:
       - hermes_agent_data:/root/.hermes              # estado persistente do agente
     environment:
       # LLM — Ollama (serviço Docker interno)
-      OLLAMA_HOST: "http://ollama:11434"
-
-      # Email da caixa de faturas
-      FINANCE_EMAIL_ADDRESS: "${FINANCE_EMAIL_ADDRESS}"
-      FINANCE_EMAIL_APP_PASSWORD: "${FINANCE_EMAIL_APP_PASSWORD}"
-      FINANCE_IMAP_HOST: "${FINANCE_IMAP_HOST:-imap.gmail.com}"
-      FINANCE_SMTP_HOST: "${FINANCE_SMTP_HOST:-smtp.gmail.com}"
-
-      # Integração com o Hermes.Gateway .NET
+      OLLAMA_HOST: "http://qwen-engine:11434"
+      
+      # Integration — Gateway .NET
       HERMES_DOTNET_GATEWAY_URL: "http://hermes-gateway:8080"
       HERMES_DOTNET_API_KEY: "${HERMES_AGENT_API_KEY}"
-
+      
+      # MCP Server — .NET Gateway
+      HERMES_MCP_URL: "http://hermes-gateway:8080/mcp"
+      HERMES_MCP_KEY: "${HERMES_MCP_KEY}"
+      
+      # Email Inbox (se for lidar com IMAP/SMTP via environment ou config.yaml)
+      FINANCE_EMAIL_ADDRESS: "${FINANCE_EMAIL_ADDRESS}"
+      FINANCE_EMAIL_APP_PASSWORD: "${FINANCE_EMAIL_APP_PASSWORD}"
+      FINANCE_IMAP_HOST: "${FINANCE_IMAP_HOST}"
+      FINANCE_SMTP_HOST: "${FINANCE_SMTP_HOST}"
+      
       # API Server do próprio agente
       API_SERVER_ENABLED: "true"
       API_SERVER_KEY: "${HERMES_API_SERVER_KEY}"
+      HERMES_API_SERVER_KEY: "${HERMES_API_SERVER_KEY}"
       API_SERVER_CORS_ORIGINS: "http://hermes-gateway:8080"
-
+      
       # WhatsApp — Baileys bridge (built-in ao Hermes Agent)
       WHATSAPP_ENABLED: "true"
       WHATSAPP_MODE: "bot"
@@ -121,12 +138,12 @@ services:
     ports:
       - "8642:8642"   # API Server (status, sessions, chat)
     depends_on:
-      ollama:
+      qwen-engine:
         condition: service_healthy
       hermes-gateway:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8642/api/status -H 'Authorization: Bearer ${HERMES_API_SERVER_KEY}' || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8642/health -H 'Authorization: Bearer ${HERMES_API_SERVER_KEY}' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -230,7 +247,7 @@ services:
       RabbitMQ__Host: rabbitmq
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
       # Ollama para reprocessamento via Semantic Kernel
-      Ollama__Endpoint: "http://ollama:11434"
+      Ollama__Endpoint: "http://qwen-engine:11434"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -308,11 +325,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=hermes_db;Username=postgres;Password=postgres"
-      Ollama__Endpoint: "http://ollama:11434"
+      Ollama__Endpoint: "http://qwen-engine:11434"
     depends_on:
       postgres:
         condition: service_healthy
-      ollama:
+      qwen-engine:
         condition: service_healthy
     <<: *net-common
 
@@ -358,7 +375,7 @@ services:
 volumes:
   hermes_pg_data:
     driver: local
-  hermes_ollama_data:
+  hermes_qwen_data:
     driver: local
   hermes_agent_data:
     driver: local
