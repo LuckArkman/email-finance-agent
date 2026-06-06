@@ -82,6 +82,7 @@ mcp_servers:
       - get_supplier_history
       - flag_for_review
       - get_pending_invoices
+      - search_knowledge_base
 
 # ------------------------------------------------------------
 # Memória — Persistência de conhecimento de fornecedores

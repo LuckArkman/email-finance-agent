@@ -78,6 +78,18 @@ public class AgentProxyController : ControllerBase
         if (request.Messages == null || request.Messages.Count == 0)
             return BadRequest(new { error = "Messages array is required." });
 
+        // Injetar o System Prompt para garantir que o Agente tem Persona e sabe usar o RAG
+        var systemPrompt = @"You are Hermes Agent, a highly capable autonomous financial AI for enterprise environments. 
+Your core directive is to assist with invoice reconciliation, data extraction, and general financial inquiries.
+CRITICAL: When asked to check pending invoices, find an invoice, or look for specific billing information, ALWAYS use the 'search_knowledge_base' tool first to consult the Vector Database.
+You also have access to 'get_pending_invoices', 'get_supplier_history', and 'ingest_invoice'.
+Respond strictly in European Portuguese (Português de Portugal).";
+
+        if (request.Messages[0].Role != "system")
+        {
+            request.Messages.Insert(0, new ChatMessage("system", systemPrompt));
+        }
+
         _logger.LogInformation("[AgentProxy] Chat request — {Count} mensagens", request.Messages.Count);
 
         var reply = await _agentClient.ChatAsync(request.Messages);

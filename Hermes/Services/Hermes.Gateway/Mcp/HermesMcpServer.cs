@@ -70,6 +70,19 @@ public static class HermesMcpServer
             Name: "get_pending_invoices",
             Description: "List invoices currently pending reconciliation in the .NET pipeline.",
             InputSchema: new { type = "object", properties = new { } }
+        ),
+        new McpTool(
+            Name: "search_knowledge_base",
+            Description: "Search the vector database for relevant invoices and financial documents using semantic search.",
+            InputSchema: new
+            {
+                type = "object",
+                required = new[] { "query" },
+                properties = new
+                {
+                    query = new { type = "string", description = "The search query (e.g. 'faturas pendentes da contoso', 'invoice for AWS')" }
+                }
+            }
         )
     };
 
@@ -89,7 +102,8 @@ public static class HermesMcpServer
             string toolName,
             HttpContext ctx,
             ILogger<WebApplication> logger,
-            HermesDbContext dbContext) =>
+            HermesDbContext dbContext,
+            IHttpClientFactory httpClientFactory) =>
         {
             if (!IsAuthorized(ctx, mcpKey)) return Results.Unauthorized();
 
@@ -104,6 +118,7 @@ public static class HermesMcpServer
                 "get_supplier_history" => await HandleGetSupplierHistory(input, dbContext),
                 "flag_for_review" => await HandleFlagForReview(input, dbContext),
                 "get_pending_invoices" => await HandleGetPendingInvoices(dbContext),
+                "search_knowledge_base" => await HandleSearchKnowledgeBase(input, httpClientFactory, logger),
                 _ => Results.NotFound(new { error = $"Unknown tool: {toolName}" })
             };
 
@@ -222,6 +237,35 @@ public static class HermesMcpServer
             .ToListAsync();
 
         return Results.Ok(new { pending_count = invoices.Count, invoices = invoices });
+    }
+
+    private static async Task<IResult> HandleSearchKnowledgeBase(JsonElement input, IHttpClientFactory httpClientFactory, ILogger logger)
+    {
+        var query = input.TryGetProperty("query", out var q) ? q.GetString() : null;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Results.BadRequest(new { error = "Query is required for knowledge base search." });
+        }
+
+        try
+        {
+            var client = httpClientFactory.CreateClient();
+            var response = await client.GetAsync($"http://hermes-vector:8080/api/hermes/Search?q={Uri.EscapeDataString(query)}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                return Results.Ok(new { results = JsonSerializer.Deserialize<JsonElement>(content) });
+            }
+            
+            logger.LogWarning("[MCP] Falha na pesquisa vetorial. Status: {Status}", response.StatusCode);
+            return Results.StatusCode((int)response.StatusCode);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[MCP] Erro ao pesquisar no vector db.");
+            return Results.Problem(detail: ex.Message);
+        }
     }
 }
 
