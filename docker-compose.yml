@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hermes_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - hermes_pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -39,8 +39,8 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "5672:5672"
-      - "15672:15672"   # Management UI
+      - "5673:5672"
+      - "15673:15672"   # Management UI
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 15s
@@ -53,7 +53,7 @@ services:
     container_name: hermes_redis
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
-      - "6379:6379"
+      - "6380:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -68,11 +68,14 @@ services:
     image: ollama/ollama:latest
     container_name: hermes_qwen_engine
     ports:
-      - "11434:11434"
+      - "11435:11434"
     volumes:
       - hermes_qwen_data:/root/.ollama
     environment:
       OLLAMA_KEEP_ALIVE: "24h"
+      OLLAMA_NUM_CTX: "32768"
+      # GPU: descomente a linha abaixo quando GPU NVIDIA disponível
+      # OLLAMA_GPU_LAYERS: "99"
     entrypoint: ["ollama", "serve"]
     healthcheck:
       test: ["CMD-SHELL", "ollama list || exit 1"]
@@ -88,10 +91,23 @@ services:
     depends_on:
       qwen-engine:
         condition: service_healthy
+    environment:
+      # Defina PULL_LARGE_MODEL=true quando GPU disponível para baixar o Qwen 32B
+      PULL_LARGE_MODEL: "${PULL_LARGE_MODEL:-false}"
     command: >
-      sh -c "echo 'Iniciando download do Qwen 3 (qwen2.5)... Isso pode demorar!' && 
-             curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5\"}' -s && 
-             echo 'Download concluído!'"
+      sh -c "
+        echo '=== Hermes Qwen Engine — Gerenciador de Modelos ===' &&
+        echo '>>> Baixando modelo RÁPIDO: qwen2.5:1.5b (~986MB)...' &&
+        curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:1.5b\"}' -s --max-time 600 &&
+        echo '>>> qwen2.5:1.5b pronto!' &&
+        if [ \"$PULL_LARGE_MODEL\" = 'true' ]; then
+          echo '>>> GPU detectada — Baixando modelo PRECISO: qwen2.5:32b (~19GB)...' &&
+          curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:32b\"}' -s --max-time 7200 &&
+          echo '>>> qwen2.5:32b pronto!';
+        else
+          echo '>>> Modo CPU: modelo grande (32b) ignorado. Defina PULL_LARGE_MODEL=true para baixar.';
+        fi &&
+        echo '=== Todos os modelos disponíveis ==='"
     <<: *net-common
 
   # ============================================================
@@ -107,12 +123,22 @@ services:
     volumes:
       - ./hermes-agent:/app                          # config, skills, hooks
       - hermes_agent_data:/root/.hermes              # estado persistente do agente
+      - ./scratch_api_server.py:/usr/local/lib/python3.12/site-packages/gateway/platforms/api_server.py
     environment:
-      # LLM — Ollama (serviço Docker interno)
+      # LLM — Arquitetura Dual: modelo rápido (1.5b) + modelo preciso (32b)
+      # HERMES_MODEL_DEFAULT controla qual modelo está ativo por padrão
+      # Troque para qwen2.5:32b no .env quando GPU disponível
+      OPENAI_BASE_URL: "http://qwen-engine:11434/v1"
+      OPENAI_API_KEY: "ollama"
+      OLLAMA_BASE_URL: "http://qwen-engine:11434"
       OLLAMA_HOST: "http://qwen-engine:11434"
+      HERMES_MODEL_DEFAULT: "${HERMES_MODEL_DEFAULT:-qwen2.5-32k}"
+      PULL_LARGE_MODEL: "${PULL_LARGE_MODEL}"
+      REQUEST_TIMEOUT: "900"
       
       # Integration — Gateway .NET
       HERMES_DOTNET_GATEWAY_URL: "http://hermes-gateway:8080"
+      HERMES_GATEWAY_URL: "http://hermes-gateway:8080"
       API_SERVER_HOST: "0.0.0.0"
       HERMES_DOTNET_API_KEY: "${HERMES_AGENT_API_KEY}"
       

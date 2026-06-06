@@ -2,16 +2,40 @@
 # https://hermes-agent.nousresearch.com/docs/user-guide/configuration
 
 # ------------------------------------------------------------
-# LLM Provider — Local Ollama (swap for nous-portal in prod)
+# LLM — Arquitetura Dual (Rápido + Preciso)
+#
+#  RÁPIDO  → qwen2.5:1.5b  (~986MB) — CPU, respostas em ~10s
+#            Triagem de emails, resumos, respostas WhatsApp
+#
+#  PRECISO → qwen2.5:32b   (~19GB)  — GPU recomendada
+#            Análise de faturas, reconciliação, decisões críticas
+#            (também usável em CPU para máquinas sem GPU — só é lento)
+#
+# Controlo via .env:
+#   HERMES_MODEL_DEFAULT=qwen2.5:1.5b   (padrão atual — CPU)
+#   HERMES_MODEL_DEFAULT=qwen2.5:32b    (quando GPU disponível)
+#   PULL_LARGE_MODEL=true               (para baixar o 32b)
 # ------------------------------------------------------------
-provider: ollama
-model: qwen2.5
-# Para produção com Nous Portal:
-# provider: nous-portal
-# model: qwen2.5
+model:
+  default: "qwen2.5-32k"
+  base_url: "http://qwen-engine:11434/v1"
+  api_key: "ollama"
+  context_length: 131072
 
 # ------------------------------------------------------------
-# Gateway — Email Inbox (IMAP/SMTP)
+# API Server — Para o .NET Gateway consultar status do agente
+# ------------------------------------------------------------
+api_server:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8642
+  key: "${HERMES_API_SERVER_KEY}"
+  cors_origins:
+    - "http://localhost:5000"
+    - "${HERMES_GATEWAY_URL}"
+
+# ------------------------------------------------------------
+# Gateway — Email Inbox (IMAP/SMTP) e WhatsApp
 # ------------------------------------------------------------
 gateway:
   email:
@@ -24,31 +48,16 @@ gateway:
     smtp_host: "${FINANCE_SMTP_HOST}"
     smtp_port: 587
     smtp_use_tls: true
-    # Apenas processar emails destes remetentes (segurança)
-    # allowed_senders pode ser omitido para aceitar qualquer remetente
-    poll_interval: 30  # segundos entre verificações
+    poll_interval: 30
 
-  # WhatsApp — Baileys bridge (Node.js, sem WhatsApp Business API)
   whatsapp:
     enabled: true
-    mode: bot                          # "bot" (número dedicado) ou "self-chat"
-    unauthorized_dm_behavior: ignore   # Ignorar DMs de desconhecidos (número privado)
-    reply_prefix: "⚕️ *Hermes Finance*\n──────\n"  # Prefixo nas respostas
+    mode: bot
+    unauthorized_dm_behavior: ignore
+    reply_prefix: "⚕️ *Hermes Finance*\n──────\n"
     extra:
-      text_batch_delay_seconds: 5.0    # Juntar mensagens rápidas antes de processar
+      text_batch_delay_seconds: 5.0
       text_batch_split_delay_seconds: 10.0
-
-# ------------------------------------------------------------
-# API Server — Para o .NET Gateway consultar status do agente
-# ------------------------------------------------------------
-api_server:
-  enabled: true
-  host: "0.0.0.0"
-  port: 8642
-  key: "${HERMES_API_SERVER_KEY}"
-  cors_origins:
-    - "http://localhost:5000"   # Hermes.Gateway .NET (dev)
-    - "${HERMES_GATEWAY_URL}"   # Hermes.Gateway .NET (prod)
 
 # ------------------------------------------------------------
 # Toolsets — Habilitar apenas o necessário para faturas
@@ -56,10 +65,10 @@ api_server:
 toolsets:
   - core
   - files
-  - vision          # Leitura de imagens/PDFs escaneados
-  - web             # web_extract para PDFs públicos/links
-  - memory          # Memória persistente de fornecedores
-  - agent           # execute_code, delegate_task
+  - vision
+  - web
+  - memory
+  - agent
 
 # ------------------------------------------------------------
 # MCP Servers — Hermes.Gateway .NET como servidor de ferramentas
@@ -79,6 +88,12 @@ mcp_servers:
 # ------------------------------------------------------------
 memory:
   auto_save: true
-  # Após processar 5 faturas do mesmo fornecedor,
-  # o agente cria automaticamente uma memória do padrão
   consolidation_threshold: 5
+
+providers:
+  openai:
+    request_timeout_seconds: 900
+    stale_timeout_seconds: 900
+  ollama:
+    request_timeout_seconds: 900
+    stale_timeout_seconds: 900

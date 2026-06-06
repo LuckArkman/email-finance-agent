@@ -1,23 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Hermes.Infrastructure.Data;
+using Hermes.Domain.Financial;
 
 namespace Hermes.Gateway.Mcp;
 
 /// <summary>
 /// MCP (Model Context Protocol) Server — expõe ferramentas do Hermes .NET
 /// para que o Hermes Agent (Nous Research) as descubra e invoque nativamente.
-///
-/// O Hermes Agent configura este servidor em config.yaml:
-///   mcp_servers:
-///     hermes_dotnet:
-///       url: "http://localhost:5000/mcp"
-///       api_key: "${HERMES_MCP_KEY}"
 /// </summary>
 public static class HermesMcpServer
 {
@@ -79,18 +77,19 @@ public static class HermesMcpServer
     {
         var mcpKey = Environment.GetEnvironmentVariable("HERMES_MCP_KEY") ?? "";
 
-        // MCP Tool Discovery — Hermes Agent chama este endpoint ao arrancar
+        // MCP Tool Discovery
         app.MapGet("/mcp/tools", (HttpContext ctx) =>
         {
             if (!IsAuthorized(ctx, mcpKey)) return Results.Unauthorized();
             return Results.Ok(new { tools = _tools });
         });
 
-        // MCP Tool Execution — Hermes Agent invoca uma ferramenta pelo nome
+        // MCP Tool Execution
         app.MapPost("/mcp/tools/{toolName}", async (
             string toolName,
             HttpContext ctx,
-            ILogger<WebApplication> logger) =>
+            ILogger<WebApplication> logger,
+            HermesDbContext dbContext) =>
         {
             if (!IsAuthorized(ctx, mcpKey)) return Results.Unauthorized();
 
@@ -101,10 +100,10 @@ public static class HermesMcpServer
 
             var result = toolName switch
             {
-                "ingest_invoice" => HandleIngestInvoice(input),
-                "get_supplier_history" => HandleGetSupplierHistory(input),
-                "flag_for_review" => HandleFlagForReview(input),
-                "get_pending_invoices" => HandleGetPendingInvoices(),
+                "ingest_invoice" => await HandleIngestInvoice(input, dbContext),
+                "get_supplier_history" => await HandleGetSupplierHistory(input, dbContext),
+                "flag_for_review" => await HandleFlagForReview(input, dbContext),
+                "get_pending_invoices" => await HandleGetPendingInvoices(dbContext),
                 _ => Results.NotFound(new { error = $"Unknown tool: {toolName}" })
             };
 
@@ -119,33 +118,111 @@ public static class HermesMcpServer
         return !string.IsNullOrEmpty(expectedKey) && bearer == expectedKey;
     }
 
-    private static IResult HandleIngestInvoice(JsonElement input) =>
-        Results.Accepted("/api/hermes/invoices/ingest", new
+    private static async Task<IResult> HandleIngestInvoice(JsonElement input, HermesDbContext dbContext)
+    {
+        var invNum = input.TryGetProperty("invoice_number", out var inv) ? inv.GetString() : "UNKNOWN";
+        var invoice = new Invoice
+        {
+            InvoiceNumber = invNum ?? "UNKNOWN",
+            TotalAmount = input.TryGetProperty("total_amount", out var ta) ? (ta.ValueKind == JsonValueKind.Number ? ta.GetDecimal() : 0) : 0,
+            Currency = input.TryGetProperty("currency", out var cur) ? cur.GetString() ?? "EUR" : "EUR",
+            VendorName = input.TryGetProperty("supplier_name", out var sn) ? sn.GetString() : null,
+            Status = InvoiceStatus.Draft,
+            IssueDate = DateTime.UtcNow
+        };
+
+        dbContext.Invoices.Add(invoice);
+        await dbContext.SaveChangesAsync();
+
+        return Results.Accepted("/api/hermes/invoices/ingest", new
         {
             status = "queued",
-            message = "Invoice forwarded to reconciliation pipeline.",
-            tracking_id = Guid.NewGuid().ToString()
+            message = "Invoice saved to database and ready for pipeline.",
+            tracking_id = invoice.Id.ToString()
         });
+    }
 
-    private static IResult HandleGetSupplierHistory(JsonElement input) =>
-        Results.Ok(new
+    private static async Task<IResult> HandleGetSupplierHistory(JsonElement input, HermesDbContext dbContext)
+    {
+        var name = input.TryGetProperty("supplier_name", out var n) ? n.GetString()?.ToLower() : null;
+        var taxId = input.TryGetProperty("supplier_tax_id", out var tid) ? tid.GetString()?.ToLower() : null;
+
+        var query = dbContext.Invoices.AsQueryable();
+
+        if (!string.IsNullOrEmpty(name))
         {
-            supplier = input.TryGetProperty("supplier_name", out var n) ? n.GetString() : null,
-            invoice_count = 0,
-            last_invoice_date = (string?)null,
-            message = "Supplier history lookup — connect to Hermes.Infrastructure for real data."
-        });
-
-    private static IResult HandleFlagForReview(JsonElement input) =>
-        Results.Ok(new
+            query = query.Where(i => i.VendorName != null && i.VendorName.ToLower().Contains(name));
+        }
+        else if (!string.IsNullOrEmpty(taxId))
         {
-            status = "flagged",
-            invoice_number = input.TryGetProperty("invoice_number", out var inv) ? inv.GetString() : null,
-            reason = input.TryGetProperty("reason", out var r) ? r.GetString() : null
-        });
+            query = query.Where(i => i.VendorTaxId != null && i.VendorTaxId.ToLower() == taxId);
+        }
+        else
+        {
+            return Results.BadRequest(new { error = "Must provide supplier_name or supplier_tax_id." });
+        }
 
-    private static IResult HandleGetPendingInvoices() =>
-        Results.Ok(new { pending_count = 0, invoices = Array.Empty<object>() });
+        var invoices = await query
+            .OrderByDescending(i => i.IssueDate)
+            .Select(i => new
+            {
+                i.InvoiceNumber,
+                i.TotalAmount,
+                i.Currency,
+                i.IssueDate,
+                Status = i.Status.ToString()
+            })
+            .ToListAsync();
+
+        return Results.Ok(new
+        {
+            supplier = name ?? taxId,
+            invoice_count = invoices.Count,
+            last_invoice_date = invoices.FirstOrDefault()?.IssueDate.ToString("yyyy-MM-dd"),
+            history = invoices
+        });
+    }
+
+    private static async Task<IResult> HandleFlagForReview(JsonElement input, HermesDbContext dbContext)
+    {
+        var invNum = input.TryGetProperty("invoice_number", out var inv) ? inv.GetString() : null;
+        var reason = input.TryGetProperty("reason", out var r) ? r.GetString() : null;
+
+        var invoice = await dbContext.Invoices.FirstOrDefaultAsync(i => i.InvoiceNumber == invNum);
+        if (invoice != null)
+        {
+            invoice.Status = InvoiceStatus.ReviewRequired;
+            // The reason can be logged or placed in a note if domain model supports it later.
+            await dbContext.SaveChangesAsync();
+
+            return Results.Ok(new
+            {
+                status = "flagged",
+                invoice_number = invNum,
+                reason = reason
+            });
+        }
+
+        return Results.NotFound(new { error = "Invoice not found." });
+    }
+
+    private static async Task<IResult> HandleGetPendingInvoices(HermesDbContext dbContext)
+    {
+        var invoices = await dbContext.Invoices
+            .Where(i => i.Status == InvoiceStatus.Pending)
+            .Select(i => new
+            {
+                i.InvoiceNumber,
+                i.VendorName,
+                i.TotalAmount,
+                i.Currency,
+                i.DueDate,
+                Status = i.Status.ToString()
+            })
+            .ToListAsync();
+
+        return Results.Ok(new { pending_count = invoices.Count, invoices = invoices });
+    }
 }
 
 public record McpTool(string Name, string Description, object InputSchema);
