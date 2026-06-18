@@ -234,6 +234,7 @@ public static class HermesMcpServer
                 i.DueDate,
                 Status = i.Status.ToString()
             })
+            .Take(5)
             .ToListAsync();
 
         return Results.Ok(new { pending_count = invoices.Count, invoices = invoices });

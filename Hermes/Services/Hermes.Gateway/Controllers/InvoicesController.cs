@@ -160,12 +160,38 @@ public class InvoicesController : ControllerBase
             totalPaid = all.Where(i => i.Status == InvoiceStatus.Paid).Sum(i => i.TotalAmount),
             totalOverdue = all.Where(i => i.Status == InvoiceStatus.Overdue).Sum(i => i.TotalAmount),
             totalReconciliation = all.Where(i => i.Status == InvoiceStatus.Reconciliation).Sum(i => i.TotalAmount),
+            
+            // New Analytics fields
+            totalInvoices = all.Sum(i => i.TotalAmount),
+            avgInvoiceValue = all.Count > 0 ? all.Average(i => i.TotalAmount) : 0,
+            totalIva = all.Sum(i => i.IvaAmount),
+            avgConfidence = all.Count > 0 ? all.Average(i => i.ConfidenceScore) : 0,
+
             countPending = all.Count(i => i.Status == InvoiceStatus.Pending),
             countPaid = all.Count(i => i.Status == InvoiceStatus.Paid),
             countOverdue = all.Count(i => i.Status == InvoiceStatus.Overdue),
             countReconciliation = all.Count(i => i.Status == InvoiceStatus.Reconciliation),
             countTotal = all.Count
         });
+    }
+
+    // GET /api/hermes/invoices/cashflow
+    // Monthly cashflow for Analytics chart
+    [HttpGet("cashflow")]
+    public async Task<IActionResult> GetMonthlyCashflow()
+    {
+        var all = await _db.Invoices.Where(i => i.IssueDate != default).ToListAsync();
+        var grouped = all.GroupBy(i => new { i.IssueDate.Year, i.IssueDate.Month })
+            .Select(g => new
+            {
+                year = g.Key.Year,
+                month = g.Key.Month,
+                total_spent = g.Sum(i => i.TotalAmount)
+            })
+            .OrderBy(m => m.year).ThenBy(m => m.month)
+            .ToList();
+
+        return Ok(new { cashflow_series = grouped });
     }
 
     // GET /api/hermes/invoices/{id}

@@ -42,7 +42,7 @@ public class Invoice : BaseEntity
     public bool     IsVectorized       { get; set; } = false;  // Já foi para o banco vectorial
     public string?  VectorId           { get; set; }  // ID no banco vectorial (Qdrant)
 
-    public Guid VendorId               { get; set; }
+    public Guid? VendorId              { get; set; }
     public Vendor? Vendor              { get; set; }
     public ICollection<InvoiceItem> Items { get; set; } = new List<InvoiceItem>();
 }

@@ -133,6 +133,136 @@ public class WhatsAppController : ControllerBase
     }
 
     // ─────────────────────────────────────────────────────────────
+    // POST /api/hermes/whatsapp/message
+    // Receives text messages from the Baileys bridge and routes to Hermes Agent.
+    // ─────────────────────────────────────────────────────────────
+    public class WhatsAppTextPayload
+    {
+        public string sender_phone { get; set; } = string.Empty;
+        public string text { get; set; } = string.Empty;
+    }
+
+    public class TranscriptionResponse
+    {
+        public string text { get; set; } = string.Empty;
+        public string language { get; set; } = string.Empty;
+    }
+
+    [HttpPost("message")]
+    public async Task<IActionResult> ReceiveMessage(
+        [FromBody] WhatsAppTextPayload payload,
+        [FromServices] Hermes.Gateway.Services.HermesAgentClient agentClient)
+    {
+        if (string.IsNullOrWhiteSpace(payload.text)) return BadRequest(new { error = "Empty message" });
+
+        try
+        {
+            // Inject context about the WhatsApp platform, sender and language requirement
+            var messages = new System.Collections.Generic.List<Hermes.Gateway.Services.ChatMessage>
+            {
+                new("system", $"És o Agente Financeiro Hermes. O utilizador com o número {payload.sender_phone} está a contactar-te pelo WhatsApp. Responde SEMPRE em português europeu (de Portugal), de forma concisa, prestativa e natural. Nunca uses expressões ou vocabulário do português do Brasil."),
+                new("user", payload.text)
+            };
+
+            var responseText = await agentClient.ChatAsync(messages);
+
+            if (!string.IsNullOrWhiteSpace(responseText))
+            {
+                // Reply to WhatsApp user via Baileys bridge
+                var client = _httpClientFactory.CreateClient();
+                var replyBody = new { to = payload.sender_phone, text = responseText };
+                await client.PostAsJsonAsync("http://baileys-bridge:3001/send", replyBody);
+            }
+
+            return Ok(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process WhatsApp message from {Sender}", payload.sender_phone);
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
+
+    [HttpPost("audio")]
+    public async Task<IActionResult> ReceiveAudio(
+        [FromForm] IFormFile file,
+        [FromForm] string sender_phone,
+        [FromServices] Hermes.Gateway.Services.HermesAgentClient agentClient)
+    {
+        if (file == null || file.Length == 0) return BadRequest(new { error = "Empty audio file" });
+        if (string.IsNullOrWhiteSpace(sender_phone)) return BadRequest(new { error = "Missing sender phone" });
+
+        var client = _httpClientFactory.CreateClient();
+        
+        try
+        {
+            // 1. Transcribe the audio via hermes-audio microservice
+            using var transcribeContent = new MultipartFormDataContent();
+            using var fileStream = file.OpenReadStream();
+            using var fileContent = new StreamContent(fileStream);
+            transcribeContent.Add(fileContent, "file", file.FileName);
+            
+            var sttResponse = await client.PostAsync("http://hermes-audio:8000/transcribe", transcribeContent);
+            if (!sttResponse.IsSuccessStatusCode)
+            {
+                _logger.LogError("STT Service failed with status {Status}", sttResponse.StatusCode);
+                return StatusCode(500, new { error = "Transcription failed" });
+            }
+            
+            var sttResult = await sttResponse.Content.ReadFromJsonAsync<TranscriptionResponse>();
+            if (string.IsNullOrWhiteSpace(sttResult?.text))
+            {
+                return Ok(new { success = true, note = "Audio transcribed as empty." });
+            }
+            
+            _logger.LogInformation("[WhatsApp Audio] Transcribed: {Text}", sttResult.text);
+
+            // 2. Pass transcribed text to the LLM agent
+            var messages = new System.Collections.Generic.List<Hermes.Gateway.Services.ChatMessage>
+            {
+                new("system", $"És o Agente Financeiro Hermes. O utilizador {sender_phone} enviou uma nota de voz com o seguinte conteúdo transcrito: '{sttResult.text}'. Responde SEMPRE em português europeu (de Portugal), de forma sucinta e natural, adequada para ser lida em voz alta. Nunca uses expressões ou vocabulário do português do Brasil."),
+                new("user", sttResult.text)
+            };
+
+            var responseText = await agentClient.ChatAsync(messages);
+
+            if (!string.IsNullOrWhiteSpace(responseText))
+            {
+                // 3. Synthesize the LLM text response to an audio buffer
+                using var synthContent = new MultipartFormDataContent();
+                synthContent.Add(new StringContent(responseText), "text");
+                // XTTS uses 'pt' language, voice identity comes from local reference_speaker.wav
+                synthContent.Add(new StringContent("pt"), "voice");
+                
+                var ttsResponse = await client.PostAsync("http://hermes-audio:8000/synthesize", synthContent);
+                if (ttsResponse.IsSuccessStatusCode)
+                {
+                    var audioBytes = await ttsResponse.Content.ReadAsByteArrayAsync();
+                    var audioBase64 = Convert.ToBase64String(audioBytes);
+                    
+                    // 4. Send the audio file back to WhatsApp
+                    var replyBody = new { to = sender_phone, audioBase64 = audioBase64, isPTT = true };
+                    await client.PostAsJsonAsync("http://baileys-bridge:3001/send", replyBody);
+                }
+                else
+                {
+                    _logger.LogError("TTS Service failed to synthesize voice.");
+                    // Fallback to text if TTS fails
+                    var replyBody = new { to = sender_phone, text = responseText };
+                    await client.PostAsJsonAsync("http://baileys-bridge:3001/send", replyBody);
+                }
+            }
+
+            return Ok(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process WhatsApp audio from {Sender}", sender_phone);
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Private helpers
     // ─────────────────────────────────────────────────────────────
     private HttpClient CreateAgentClient()

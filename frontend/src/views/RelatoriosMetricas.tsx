@@ -24,10 +24,10 @@ import api from '../services/api';
 
 const RelatoriosMetricas: React.FC = () => {
   const [stats, setStats] = useState({
-    total_spent: 0,
-    processed_count: 0,
-    pending_review: 0,
-    avg_confidence: 0
+    totalInvoices: 0,
+    avgInvoiceValue: 0,
+    totalIva: 0,
+    avgConfidence: 0
   });
 
   const [cashflow, setCashflow] = useState<any[]>([]);
@@ -37,8 +37,8 @@ const RelatoriosMetricas: React.FC = () => {
     const fetchData = async () => {
       try {
         const [statsRes, cashRes] = await Promise.all([
-          api.get('/analytics/stats'),
-          api.get('/analytics/cashflow')
+          api.get('/invoices/kpis'),
+          api.get('/invoices/cashflow')
         ]);
         setStats(statsRes.data);
         
@@ -97,7 +97,7 @@ const RelatoriosMetricas: React.FC = () => {
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <MetricCard 
               title="Total em Faturas" 
-              value={formatCurrency(stats.total_spent)} 
+              value={formatCurrency(stats.totalInvoices || 0)} 
               trend="+0%" 
               icon={<TrendingUp size={20} />} 
               data={chartMockData} 
@@ -105,23 +105,23 @@ const RelatoriosMetricas: React.FC = () => {
             />
             <MetricCard 
               title="Média por Doc." 
-              value={formatCurrency(stats.processed_count > 0 ? stats.total_spent / stats.processed_count : 0)} 
+              value={formatCurrency(stats.avgInvoiceValue || 0)} 
               trend="IA" 
               icon={<FileText size={20} />} 
               data={chartMockData} 
               color="purple" 
             />
             <MetricCard 
-              title="Aguardando Revisão" 
-              value={stats.pending_review.toString()} 
-              trend="Ação" 
+              title="IVA Cobrado" 
+              value={formatCurrency(stats.totalIva || 0)} 
+              trend="Imposto" 
               icon={<AlertCircle size={20} />} 
               data={chartMockData} 
               color="red" 
             />
             <MetricCard 
               title="Confiança Média" 
-              value={`${stats.avg_confidence}%`} 
+              value={`${Math.round((stats.avgConfidence || 0) * 100)}%`} 
               trend="Preciso" 
               icon={<Target size={20} />} 
               data={chartMockData} 

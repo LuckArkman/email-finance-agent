@@ -104,7 +104,7 @@ const InvoicesInboxView: React.FC = () => {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/invoices');
+      const res = await api.get('/documents');
       // Backend returns { data: [...], total: ... }
       setData(res.data.data || []);
     } catch (err) {

@@ -17,10 +17,10 @@
 #   PULL_LARGE_MODEL=true               (para baixar o 32b)
 # ------------------------------------------------------------
 model:
-  default: "qwen2.5-32k"
+  default: "qwen2.5:1.5b"
   base_url: "http://qwen-engine:11434/v1"
   api_key: "ollama"
-  context_length: 131072
+  context_length: 2048
 
 # ------------------------------------------------------------
 # API Server — Para o .NET Gateway consultar status do agente
@@ -65,10 +65,7 @@ gateway:
 toolsets:
   - core
   - files
-  - vision
-  - web
   - memory
-  - agent
 
 # ------------------------------------------------------------
 # MCP Servers — Hermes.Gateway .NET como servidor de ferramentas
@@ -92,9 +89,12 @@ memory:
   consolidation_threshold: 5
 
 providers:
+  openrouter:
+    request_timeout_seconds: 1800
+    stale_timeout_seconds: 1800
   openai:
-    request_timeout_seconds: 900
-    stale_timeout_seconds: 900
+    request_timeout_seconds: 1800
+    stale_timeout_seconds: 1800
   ollama:
-    request_timeout_seconds: 900
-    stale_timeout_seconds: 900
+    request_timeout_seconds: 1800
+    stale_timeout_seconds: 1800

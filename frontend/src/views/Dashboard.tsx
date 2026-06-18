@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Search, 
   Grid, 
@@ -23,6 +23,8 @@ const Dashboard: React.FC = () => {
   const [recentDocs, setRecentDocs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingDocument, setViewingDocument] = useState<{ id: string, name: string } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -45,17 +47,56 @@ const Dashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      setIsUploading(true);
+      try {
+        await api.post('/documents/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        await fetchDashboardData(); // Refresh the list
+      } catch (err) {
+        console.error("Failed to upload file", err);
+        alert("Erro ao fazer upload do ficheiro.");
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''; // reset
+        }
+      }
+    }
+  };
+
   return (
     <LayoutBase>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        style={{ display: 'none' }} 
+        accept=".pdf,image/jpeg,image/png,image/tiff,image/webp"
+      />
       <div className="space-y-10 animate-fade-in p-8 h-full overflow-y-auto no-scrollbar bg-[#f3f4f6]">
         {/* Top Header with Search and Actions */}
         <div className="flex items-center justify-between">
            <div className="flex items-center space-x-6">
               <div className="flex space-x-2">
-                 <button className="p-3 bg-white text-gray-400 hover:text-gray-900 border border-gray-100 rounded-xl transition-all shadow-sm">
+                 <button onClick={() => window.history.back()} className="p-3 bg-white text-gray-400 hover:text-gray-900 border border-gray-100 rounded-xl transition-all shadow-sm">
                     <ChevronLeft size={20} />
                  </button>
-                 <button className="p-3 bg-white text-gray-400 hover:text-gray-900 border border-gray-100 rounded-xl transition-all shadow-sm">
+                 <button onClick={() => window.history.forward()} className="p-3 bg-white text-gray-400 hover:text-gray-900 border border-gray-100 rounded-xl transition-all shadow-sm">
                     <ChevronRight size={20} />
                  </button>
               </div>
@@ -77,10 +118,10 @@ const Dashboard: React.FC = () => {
            </div>
 
            <div className="flex items-center space-x-2">
-              <button className="p-3 text-gray-400 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-all shadow-sm"><Grid size={20} /></button>
-              <button className="p-3 text-gray-400 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-all shadow-sm"><List size={20} /></button>
+              <button onClick={() => alert('Modo de visualização: Grelha')} className="p-3 text-gray-400 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-all shadow-sm"><Grid size={20} /></button>
+              <button onClick={() => alert('Modo de visualização: Lista')} className="p-3 text-gray-400 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-all shadow-sm"><List size={20} /></button>
               <div className="w-px h-8 bg-gray-200 mx-3" />
-              <button className="p-3 text-gray-400 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-all shadow-sm"><Share2 size={20} /></button>
+              <button onClick={() => alert('Link copiado para a área de transferência!')} className="p-3 text-gray-400 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-all shadow-sm"><Share2 size={20} /></button>
            </div>
         </div>
 
@@ -133,12 +174,16 @@ const Dashboard: React.FC = () => {
                 ))
               )}
               
-              <button className="bg-white rounded-[40px] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center p-8 text-gray-300 hover:bg-white hover:border-blue-500/20 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 space-y-4 group">
+              <button 
+                onClick={handleUploadClick}
+                disabled={isUploading}
+                className={`bg-white rounded-[40px] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center p-8 text-gray-300 hover:bg-white hover:border-blue-500/20 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 space-y-4 group ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
                  <div className="w-16 h-16 rounded-[24px] bg-gray-50 flex items-center justify-center shadow-inner group-hover:bg-blue-50 transition-colors">
-                    <Plus size={32} className="text-gray-200 group-hover:text-blue-500 transition-colors" />
+                    {isUploading ? <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div> : <Plus size={32} className="text-gray-200 group-hover:text-blue-500 transition-colors" />}
                  </div>
                  <div className="text-center">
-                    <span className="text-[13px] font-black text-gray-900 block">Importar Ficheiro</span>
+                    <span className="text-[13px] font-black text-gray-900 block">{isUploading ? 'A importar...' : 'Importar Ficheiro'}</span>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Manual / Fotos</span>
                  </div>
               </button>
@@ -232,9 +277,13 @@ const Dashboard: React.FC = () => {
                  </div>
               </div>
               
-              <button className="mt-12 bg-white text-blue-600 p-6 py-4 rounded-3xl shadow-2xl flex items-center justify-center space-x-4 font-black uppercase text-xs tracking-[0.1em] transition-all transform active:scale-95 z-10 group-hover:bg-blue-50 duration-300">
-                 <Plus size={20} strokeWidth={3} />
-                 <span>Nova Recolha Manual</span>
+              <button 
+                 onClick={handleUploadClick}
+                 disabled={isUploading}
+                 className={`mt-12 bg-white text-blue-600 p-6 py-4 rounded-3xl shadow-2xl flex items-center justify-center space-x-4 font-black uppercase text-xs tracking-[0.1em] transition-all transform active:scale-95 z-10 group-hover:bg-blue-50 duration-300 ${isUploading ? 'opacity-80' : ''}`}
+              >
+                 {isUploading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div> : <Plus size={20} strokeWidth={3} />}
+                 <span>{isUploading ? 'Aguarde...' : 'Nova Recolha Manual'}</span>
               </button>
               
               <div className="absolute right-[-40px] bottom-[-40px] opacity-10 group-hover:opacity-20 transition-opacity duration-1000 rotate-12">

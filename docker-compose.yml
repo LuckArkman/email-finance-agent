@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hermes_db
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - hermes_pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -73,9 +73,8 @@ services:
       - hermes_qwen_data:/root/.ollama
     environment:
       OLLAMA_KEEP_ALIVE: "24h"
-      OLLAMA_NUM_CTX: "32768"
-      # GPU: descomente a linha abaixo quando GPU NVIDIA disponível
-      # OLLAMA_GPU_LAYERS: "99"
+      OLLAMA_NUM_CTX: "8192"
+      OLLAMA_DEBUG: "1"
     entrypoint: ["ollama", "serve"]
     healthcheck:
       test: ["CMD-SHELL", "ollama list || exit 1"]
@@ -87,27 +86,34 @@ services:
 
   qwen-puller:
     image: curlimages/curl:latest
+    restart: "no"
     container_name: hermes_qwen_puller
     depends_on:
       qwen-engine:
         condition: service_healthy
     environment:
-      # Defina PULL_LARGE_MODEL=true quando GPU disponível para baixar o Qwen 32B
       PULL_LARGE_MODEL: "${PULL_LARGE_MODEL:-false}"
     command: >
       sh -c "
         echo '=== Hermes Qwen Engine — Gerenciador de Modelos ===' &&
-        echo '>>> Baixando modelo RÁPIDO: qwen2.5:1.5b (~986MB)...' &&
-        curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:1.5b\"}' -s --max-time 600 &&
-        echo '>>> qwen2.5:1.5b pronto!' &&
-        if [ \"$PULL_LARGE_MODEL\" = 'true' ]; then
-          echo '>>> GPU detectada — Baixando modelo PRECISO: qwen2.5:32b (~19GB)...' &&
-          curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:32b\"}' -s --max-time 7200 &&
-          echo '>>> qwen2.5:32b pronto!';
+        TAGS=$$(curl -s http://qwen-engine:11434/api/tags) &&
+        if echo \"$$TAGS\" | grep -q '\"name\":\"qwen2.5:1.5b\"'; then
+          echo '>>> Modelo RÁPIDO: qwen2.5:1.5b já existe no volume! Saltando download.';
+        else
+          echo '>>> Baixando modelo RÁPIDO: qwen2.5:1.5b (~986MB)...' &&
+          curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:1.5b\"}' -s --max-time 600;
+        fi &&
+        if [ \"$$PULL_LARGE_MODEL\" = 'true' ]; then
+          if echo \"$$TAGS\" | grep -q '\"name\":\"qwen2.5:32b\"'; then
+            echo '>>> Modelo PRECISO: qwen2.5:32b já existe no volume! Saltando download.';
+          else
+            echo '>>> GPU detectada — Baixando modelo PRECISO: qwen2.5:32b (~19GB)...' &&
+            curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:32b\"}' -s --max-time 7200;
+          fi
         else
           echo '>>> Modo CPU: modelo grande (32b) ignorado. Defina PULL_LARGE_MODEL=true para baixar.';
         fi &&
-        echo '=== Todos os modelos disponíveis ==='"
+        echo '=== Modelos Prontos ==='"
     <<: *net-common
 
   # ============================================================
@@ -124,6 +130,7 @@ services:
       - ./hermes-agent:/app                          # config, skills, hooks
       - hermes_agent_data:/root/.hermes              # estado persistente do agente
       - ./scratch_api_server.py:/usr/local/lib/python3.12/site-packages/gateway/platforms/api_server.py
+      - ./scratch_model_metadata.py:/usr/local/lib/python3.12/site-packages/agent/model_metadata.py
     environment:
       # LLM — Arquitetura Dual: modelo rápido (1.5b) + modelo preciso (32b)
       # HERMES_MODEL_DEFAULT controla qual modelo está ativo por padrão
@@ -178,6 +185,19 @@ services:
     <<: *net-common
 
   # ============================================================
+  # HERMES AUDIO (STT / TTS MICROSERVICE)
+  # ============================================================
+  hermes-audio:
+    build:
+      context: ./backend/hermes-audio
+    container_name: hermes_audio_service
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - hermes-net
+
+  # ============================================================
   # WHATSAPP BRIDGE (Baileys Node.js)
   # ============================================================
   baileys-bridge:
@@ -185,8 +205,8 @@ services:
       context: ./baileys-bridge
     container_name: hermes_whatsapp_bridge
     environment:
-      # URL for the bridge to send incoming files (e.g. to the python agent or gateway)
-      BACKEND_URL: "http://hermes-agent:8642"
+      # URL for the bridge to send incoming files and text messages
+      BACKEND_URL: "http://hermes-gateway:8080"
     ports:
       - "3001:3001"
     volumes:

@@ -78,19 +78,15 @@ public class AgentProxyController : ControllerBase
         if (request.Messages == null || request.Messages.Count == 0)
             return BadRequest(new { error = "Messages array is required." });
 
-        // Injetar o System Prompt para garantir que o Agente tem Persona e sabe usar o RAG
-        var systemPrompt = @"You are Hermes Agent, a highly capable autonomous financial AI for enterprise environments. 
-Your core directive is to assist with invoice reconciliation, data extraction, and general financial inquiries.
-CRITICAL: When asked to check pending invoices, find an invoice, or look for specific billing information, ALWAYS use the 'search_knowledge_base' tool first to consult the Vector Database.
-You also have access to 'get_pending_invoices', 'get_supplier_history', and 'ingest_invoice'.
-Respond strictly in European Portuguese (Português de Portugal).";
-
-        if (request.Messages[0].Role != "system")
-        {
-            request.Messages.Insert(0, new ChatMessage("system", systemPrompt));
-        }
-
         _logger.LogInformation("[AgentProxy] Chat request — {Count} mensagens", request.Messages.Count);
+
+        // Ensure the agent always responds in European Portuguese, regardless of the caller.
+        // Prepend the system prompt only if the caller didn't already provide one.
+        const string ptPtSystemPrompt = "És o Agente Financeiro Hermes. Responde SEMPRE em português europeu (de Portugal), de forma clara, precisa e profissional. Nunca uses expressões ou vocabulário do português do Brasil.";
+        if (!request.Messages.Any(m => m.Role.Equals("system", StringComparison.OrdinalIgnoreCase)))
+        {
+            request.Messages.Insert(0, new Hermes.Gateway.Services.ChatMessage("system", ptPtSystemPrompt));
+        }
 
         var reply = await _agentClient.ChatAsync(request.Messages);
 

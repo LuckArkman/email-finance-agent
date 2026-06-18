@@ -39,13 +39,13 @@ builder.Services.AddHttpClient<Hermes.Gateway.Services.HermesAgentClient>(client
 {
     client.BaseAddress = new Uri(hermesAgentUrl);
     client.DefaultRequestHeaders.Add("Authorization", $"Bearer {hermesAgentKey}");
-    client.Timeout = TimeSpan.FromSeconds(300);
+    client.Timeout = TimeSpan.FromSeconds(900);
 })
 .AddStandardResilienceHandler(options => 
 {
-    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(300);
-    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(300);
-    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(600);
+    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(900);
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(900);
+    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(1800);
 });
 
 

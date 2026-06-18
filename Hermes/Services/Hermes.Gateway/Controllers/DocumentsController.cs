@@ -98,7 +98,7 @@ public class DocumentsController : ControllerBase
     // Manual file upload - creates a Draft invoice record
     [HttpPost("upload")]
     [RequestSizeLimit(50_000_000)] // 50 MB
-    public async Task<IActionResult> Upload([FromForm] IFormFile file)
+    public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string? source = null, [FromForm] string? sender = null)
     {
         if (file == null || file.Length == 0)
             return BadRequest(new { detail = "No file provided." });
@@ -115,7 +115,8 @@ public class DocumentsController : ControllerBase
             IssueDate      = DateTime.UtcNow,
             Status         = InvoiceStatus.Draft,
             Filename       = file.FileName,
-            SourceType     = "upload",
+            SourceType     = source ?? "upload",
+            SourceEmail    = sender,
             Currency       = "EUR",
             ConfidenceScore = 0,
             CreatedAt      = DateTime.UtcNow
@@ -124,7 +125,21 @@ public class DocumentsController : ControllerBase
         _db.Invoices.Add(invoiceRecord);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation("Document uploaded: {Filename} ({Size} bytes)", file.FileName, file.Length);
+        _logger.LogInformation("Document uploaded: {Filename} ({Size} bytes) via {Source} from {Sender}", file.FileName, file.Length, source, sender);
+
+        if (source == "whatsapp" && !string.IsNullOrEmpty(sender))
+        {
+            try
+            {
+                using var client = new System.Net.Http.HttpClient();
+                var replyBody = new { to = sender, text = $"*🤖 Sistema Hermes*\nRecebemos o ficheiro com sucesso. O processamento automático (OCR) do seu documento iniciou agora." };
+                await client.PostAsJsonAsync("http://baileys-bridge:3001/send", replyBody);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha ao enviar resposta de confirmação para o WhatsApp.");
+            }
+        }
 
         return Ok(new
         {

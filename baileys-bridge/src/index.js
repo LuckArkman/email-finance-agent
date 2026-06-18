@@ -12,6 +12,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { EventEmitter } = require('events');
+const FormData = require('form-data');
 
 // ─────────────────────────────────────────────
 // Config
@@ -104,10 +105,51 @@ async function startWhatsApp() {
 
       const msgType = Object.keys(msg.message || {})[0];
       const isMedia = ['imageMessage', 'documentMessage', 'documentWithCaptionMessage'].includes(msgType);
+      const isText = ['conversation', 'extendedTextMessage'].includes(msgType);
+      const isAudio = msgType === 'audioMessage';
 
-      if (!isMedia) continue;
+      if (!isMedia && !isText && !isAudio) continue;
 
       const sender = msg.key.remoteJid?.split('@')[0] ?? 'unknown';
+
+      if (isText) {
+        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+        console.log(`[baileys] Text message received from ${sender}: ${text}`);
+        try {
+          await axios.post(`${BACKEND_URL}/api/hermes/whatsapp/message`, {
+            sender_phone: sender,
+            text: text
+          });
+        } catch (err) {
+          console.error('[baileys] Error forwarding text message:', err.message);
+        }
+        continue;
+      }
+
+      if (isAudio) {
+        console.log(`[baileys] Audio message received from ${sender}`);
+        try {
+          const buffer = await downloadMediaMessage(msg, 'buffer', {}, { logger });
+          const filename = `wa_${Date.now()}_${sender}.ogg`;
+          const filePath = path.join(UPLOAD_DIR, filename);
+          fs.writeFileSync(filePath, buffer);
+
+          const form = new FormData();
+          form.append('file', fs.createReadStream(filePath), filename);
+          form.append('sender_phone', sender);
+
+          await axios.post(`${BACKEND_URL}/api/hermes/whatsapp/audio`, form, {
+            headers: form.getHeaders(),
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity
+          });
+          console.log(`[baileys] Forwarded audio to Gateway for STT`);
+        } catch (err) {
+          console.error('[baileys] Error processing incoming audio:', err.message);
+        }
+        continue;
+      }
+
       console.log(`[baileys] Media message received from ${sender} — type: ${msgType}`);
 
       try {
@@ -121,15 +163,19 @@ async function startWhatsApp() {
         fs.writeFileSync(filePath, buffer);
         console.log(`[baileys] Saved media to ${filePath}`);
 
-        // Notify Python backend
-        await axios.post(`${BACKEND_URL}/api/v1/whatsapp/baileys/media`, {
-          file_path: filePath,
-          sender_phone: sender,
-          message_id: msg.key.id,
-          media_type: msgType === 'imageMessage' ? 'image' : 'document',
+        // Send to Gateway using form-data
+        const form = new FormData();
+        form.append('file', fs.createReadStream(filePath), filename);
+        form.append('source', 'whatsapp');
+        form.append('sender', sender);
+
+        await axios.post(`${BACKEND_URL}/api/hermes/documents/upload`, form, {
+          headers: form.getHeaders(),
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity
         });
 
-        console.log(`[baileys] Notified backend for ${filename}`);
+        console.log(`[baileys] Uploaded ${filename} to Gateway`);
       } catch (err) {
         console.error('[baileys] Error processing media:', err.message);
       }
@@ -173,6 +219,31 @@ app.post('/disconnect', async (_req, res) => {
     // Restart to pick up fresh auth
     setTimeout(startWhatsApp, 1500);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** POST /send — sends a text or audio message to a WhatsApp user */
+app.post('/send', async (req, res) => {
+  try {
+    const { to, text, audioBase64, isPTT } = req.body;
+    if (!state.sock || state.status !== 'connected') {
+      return res.status(503).json({ error: 'WhatsApp not connected' });
+    }
+    const jid = `${to}@s.whatsapp.net`;
+    
+    if (audioBase64) {
+      const buffer = Buffer.from(audioBase64, 'base64');
+      await state.sock.sendMessage(jid, { audio: buffer, ptt: !!isPTT });
+      console.log(`[baileys] Audio message (PTT) sent to ${to}`);
+    } else {
+      await state.sock.sendMessage(jid, { text });
+      console.log(`[baileys] Text message sent to ${to}`);
+    }
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[baileys] Error sending message:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

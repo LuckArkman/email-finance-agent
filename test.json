@@ -1,0 +1,5 @@
+{
+  "model": "qwen2.5:1.5b",
+  "prompt": "Responda apenas a palavra: SUCESSO",
+  "stream": false
+}
