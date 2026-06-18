@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Hermes.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f737b204c2e18a084589e6de584451606f1bb41f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b0e1b4bac1d779a2c233c1ba3a2ebe6be27aaf0f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Hermes.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Hermes.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

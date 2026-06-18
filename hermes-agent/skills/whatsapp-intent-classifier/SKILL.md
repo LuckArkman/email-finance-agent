@@ -98,7 +98,7 @@ Responde APENAS com o JSON:
 
 **INVOICE (confiança ≥ 0.6):**
 → Activa skill `invoice-extraction` para processar a fatura
-→ Responde: "📄 Fatura detectada! A extrair dados..."
+→ Responde: "Recebi o seu documento. A iniciar a tarefa de extração e OCR..."
 
 **INVOICE (confiança < 0.6):**
 → Activa skill `invoice-extraction` com flag `low_confidence=true`
