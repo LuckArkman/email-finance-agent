@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install system dependencies including Node.js and npm
 RUN apt-get update -qq && \
-    apt-get install -y -qq curl gnupg && \
+    apt-get install -y -qq curl gnupg git build-essential && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y -qq nodejs && \
     apt-get clean && \
@@ -17,7 +17,7 @@ RUN pip install --quiet --no-cache-dir hermes-agent httpx && \
     cd /usr/local/lib/python3.12/site-packages/scripts/whatsapp-bridge && \
     curl -fsSLO https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/whatsapp-bridge/bridge.js && \
     curl -fsSLO https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/whatsapp-bridge/package.json && \
-    npm install --omit=dev
+    npm install --omit=dev --loglevel verbose
 
 # The configuration and skills will be mounted as a volume.
 # For runtime, we just copy the initial config to the expected path and run the gateway.
