@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Hermes.Reconciliation")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3f084ddd148882143a9971c8975b573af6b212f6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8dfe2213a4c220e246d852691e045bacd487e758")]
 [assembly: System.Reflection.AssemblyProductAttribute("Hermes.Reconciliation")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Hermes.Reconciliation")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

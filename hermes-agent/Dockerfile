@@ -11,7 +11,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies and fetch missing whatsapp-bridge scripts
-RUN pip install --quiet --no-cache-dir hermes-agent httpx && \
+RUN pip install --quiet --no-cache-dir hermes-agent==0.16.0 httpx && \
     sed -i 's/MINIMUM_CONTEXT_LENGTH = 4096/MINIMUM_CONTEXT_LENGTH = 2048/g' /usr/local/lib/python3.12/site-packages/agent/model_metadata.py && \
     mkdir -p /usr/local/lib/python3.12/site-packages/scripts/whatsapp-bridge && \
     cd /usr/local/lib/python3.12/site-packages/scripts/whatsapp-bridge && \

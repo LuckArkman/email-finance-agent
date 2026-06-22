@@ -168,9 +168,9 @@ services:
       # WhatsApp — Baileys bridge (built-in ao Hermes Agent)
       WHATSAPP_ENABLED: "true"
       WHATSAPP_MODE: "bot"
-      WHATSAPP_ALLOW_ALL_USERS: "false"
+      WHATSAPP_ALLOW_ALL_USERS: "true"
       WHATSAPP_ADMIN_PHONE: "351933330009"
-      WHATSAPP_ALLOWED_NUMBERS: "351933330009"
+      WHATSAPP_ALLOWED_USERS: "351933330009"
     ports:
       - "8642:8642"   # API Server (status, sessions, chat)
     depends_on:
