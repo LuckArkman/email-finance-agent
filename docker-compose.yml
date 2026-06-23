@@ -104,14 +104,14 @@ services:
           curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:1.5b\"}' -s --max-time 600;
         fi &&
         if [ \"$$PULL_LARGE_MODEL\" = 'true' ]; then
-          if echo \"$$TAGS\" | grep -q '\"name\":\"qwen2.5:32b\"'; then
-            echo '>>> Modelo PRECISO: qwen2.5:32b já existe no volume! Saltando download.';
+          if echo \"$$TAGS\" | grep -q '\"name\":\"qwen2.5:12b\"'; then
+            echo '>>> Modelo PRECISO: qwen2.5:12b já existe no volume! Saltando download.';
           else
-            echo '>>> GPU detectada — Baixando modelo PRECISO: qwen2.5:32b (~19GB)...' &&
-            curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:32b\"}' -s --max-time 7200;
+            echo '>>> GPU detectada — Baixando modelo PRECISO: qwen2.5:12b (~8GB)...' &&
+            curl -X POST http://qwen-engine:11434/api/pull -d '{\"name\": \"qwen2.5:12b\"}' -s --max-time 7200;
           fi
         else
-          echo '>>> Modo CPU: modelo grande (32b) ignorado. Defina PULL_LARGE_MODEL=true para baixar.';
+          echo '>>> Modo CPU: modelo grande (12b) ignorado. Defina PULL_LARGE_MODEL=true para baixar.';
         fi &&
         echo '=== Modelos Prontos ==='"
     <<: *net-common
@@ -132,9 +132,9 @@ services:
       - ./scratch_api_server.py:/usr/local/lib/python3.12/site-packages/gateway/platforms/api_server.py
       - ./scratch_model_metadata.py:/usr/local/lib/python3.12/site-packages/agent/model_metadata.py
     environment:
-      # LLM — Arquitetura Dual: modelo rápido (1.5b) + modelo preciso (32b)
+      # LLM — Arquitetura Dual: modelo rápido (1.5b) + modelo preciso (12b)
       # HERMES_MODEL_DEFAULT controla qual modelo está ativo por padrão
-      # Troque para qwen2.5:32b no .env quando GPU disponível
+      # Troque para qwen2.5:12b no .env quando GPU disponível
       OPENAI_BASE_URL: "http://qwen-engine:11434/v1"
       OPENAI_API_KEY: "ollama"
       OLLAMA_BASE_URL: "http://qwen-engine:11434"

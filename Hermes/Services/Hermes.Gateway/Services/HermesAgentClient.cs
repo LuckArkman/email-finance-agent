@@ -36,7 +36,7 @@ public class HermesAgentClient
             var healthResp = await _http.GetAsync("/health");
             if (healthResp.IsSuccessStatusCode)
             {
-                return new AgentStatusResponse("1.0", true, 0, "qwen:32b", "ollama");
+                return new AgentStatusResponse("1.0", true, 0, "qwen:12b", "ollama");
             }
             return null;
         }

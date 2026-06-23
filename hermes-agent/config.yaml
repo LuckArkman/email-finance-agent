@@ -7,14 +7,14 @@
 #  RÁPIDO  → qwen2.5:1.5b  (~986MB) — CPU, respostas em ~10s
 #            Triagem de emails, resumos, respostas WhatsApp
 #
-#  PRECISO → qwen2.5:32b   (~19GB)  — GPU recomendada
+#  PRECISO → qwen2.5:12b   (~8GB)  — GPU recomendada
 #            Análise de faturas, reconciliação, decisões críticas
 #            (também usável em CPU para máquinas sem GPU — só é lento)
 #
 # Controlo via .env:
 #   HERMES_MODEL_DEFAULT=qwen2.5:1.5b   (padrão atual — CPU)
-#   HERMES_MODEL_DEFAULT=qwen2.5:32b    (quando GPU disponível)
-#   PULL_LARGE_MODEL=true               (para baixar o 32b)
+#   HERMES_MODEL_DEFAULT=qwen2.5:12b    (quando GPU disponível)
+#   PULL_LARGE_MODEL=true               (para baixar o 12b)
 # ------------------------------------------------------------
 model:
   default: "qwen2.5:1.5b"

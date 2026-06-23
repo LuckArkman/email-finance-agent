@@ -1,155 +1,106 @@
-# AI Email Finance Agent — Documentação Completa do Projeto
+# Hermes — AI Email Finance Agent B2B
+**Documentação Completa da Arquitetura, Recursos, Ferramentas e Bibliotecas**
 
-Este documento serve como a referência primária, exaustiva e minuciosa para todo o ecossistema do **AI Email Finance Agent**. Cobre a totalidade da arquitetura, funcionamento dos componentes, roteamento da API, payloads e a interligação com as interfaces gráficas (Frontend).
+Este documento serve como a referência primária, exaustiva e técnica para todo o ecossistema do **Hermes**, uma plataforma inteligente B2B arquitetada para a automação total de processos financeiros, captura e reconciliação de faturas via e-mail e interação proativa com os administradores por WhatsApp.
 
----
-
-## 1. Visão Geral da Arquitetura
-
-O sistema é desenhado em torno de uma arquitetura baseada em micro-serviços executados em contentores Docker, garantindo escalabilidade, resiliência e a capacidade de realizar processos assíncronos pesados (como OCR e Extração LLM) sem bloquear a interface do utilizador.
-
-### 1.1 Stack Tecnológico Principal
-- **Backend**: FastAPI (Python 3.12)
-- **Mensageria & Tarefas em Background**: Celery + Redis
-- **Bases de Dados**: 
-  - PostgreSQL (Dados Estruturados: utilizadores, faturas, line items, logs).
-  - MongoDB (Dados Não-Estruturados: emails raw e históricos de extração).
-  - ChromaDB (Banco Vetorial para busca semântica em linguagem natural).
-- **Inteligência Artificial**: Ollama (Llama 3 e nomic-embed-text) operando localmente, fallback para OpenAI.
-- **Frontend**: React.js (Vite), Tailwind CSS, Framer Motion (animações), Zustand (gestão de estado global).
+O sistema baseia-se numa arquitetura híbrida de ponta, interligando microsserviços corporativos rígidos e escaláveis em **.NET 9 (C#)** com a maleabilidade, inovação algorítmica e capacidade cognitiva de um motor de Agente Autônomo em **Python 3.12**, apoiado por Modelos de Linguagem de Larga Escala (LLM) que correm 100% localmente.
 
 ---
 
-## 2. Componentes Internos do Backend
+## 1. Visão Geral e Paradigma
 
-O backend (`app/`) está estruturado de forma modular:
+A aplicação afasta-se de monolitos tradicionais em favor de uma **Arquitetura Orientada a Eventos (Event-Driven Architecture)**, potenciando alta concorrência. Operações pesadas como OCR (Reconhecimento Ótico de Caracteres), inferência LLM de biliões de parâmetros ou vetorização semântica de milhares de e-mails ocorrem em background, perfeitamente orquestradas, sem bloquear as rotas RESTful da interface do utilizador.
 
-* **`app/extraction/` (Cérebro da IA)**: 
-  * Contém clientes para LLMs (`LLMExtractorClient`), promtping dinâmico baseado em RAG e avaliação de confiança (`ConfidenceEvaluator`).
-  * Processa Extração de Cabeçalhos, Identificação de *Line Items* e análise espacial (OCR → Textract/EasyOCR/Tesseract).
-* **`app/tasks/` (Processamento Assíncrono)**:
-  * `email_tasks.py`: Orquestra a sincronização de contas (Gmail/Outlook IMAP e Graph API), efetua o parsing de anexos físicos e do corpo do e-mail, e inicia a delegação de tarefas de OCR.
-  * `ocr_tasks.py`: Recebe ficheiros, aplica deskewing (limpeza da imagem), envia para OCR, depois para o LLM Llama3 para extração Pydantic. Se a extração for válida, indexa automaticamente no ChromaDB.
-* **`app/services/`**: Lógica de negócio agnóstica de rotas.
-  * `vector_store.py`: Abstração sobre o ChromaDB e Ollama Embeddings, lidando com reindexações e procuras de similaridade por coseno.
-  * `whatsapp_service.py`: Emissão de mensagens pelo WhatsApp Baileys Bridge.
-* **`app/telemetry.py`**: Gestor central de observabilidade (Sentry, Prometheus) e logs blindados (ocultação de PII).
-* **`app/security.py` & `app/tenant.py`**: Garantem o isolamento arquitetónico Multi-Tenant. Cada pedido à API passa por middlewares que injetam o `tenant_id` no contexto global, evitando o cruzamento acidental de dados entre empresas.
+A plataforma foca-se na **privacidade absoluta (Local AI)**. Todos os documentos financeiros não cruzam as fronteiras do servidor, sendo analisados localmente por motores *Open-Weights*.
 
 ---
 
-## 3. Descrição Minuciosa das Rotas da API (Backend)
+## 2. Stack Tecnológico, Pacotes e Bibliotecas
 
-Todos os endpoints estão alojados sob o prefixo `/api/v1/`. Eles são protegidos por tokens JWT (JSON Web Tokens) e limitadores de tráfego (Rate Limiting).
+### 2.1. Core Services & Backend Corporativo (.NET 9)
+A espinha dorsal de regras de negócio, persistência estruturada e roteamento é garantida por um ecossistema C# (.NET 9):
+* **ASP.NET Core (Web API)**: Fornece os endpoints REST de alta performance, protegidos por tokens JWT (JSON Web Tokens).
+* **YARP (Yet Another Reverse Proxy)**: Atua dentro do serviço de Gateway, canalizando tráfego de entrada em segurança para os sub-serviços adequados.
+* **Entity Framework Core 9 (EF Core)**: ORM robusto gerindo os modelos de dados e a migração de esquemas com o banco relacional de forma tipificada.
+* **MassTransit (com RabbitMQ)**: Biblioteca de abstração e orquestração de mensageria (Pub/Sub e filas) para garantir que microserviços comunicam entre si sem dependências síncronas pesadas.
+* **Microsoft Semantic Kernel**: Integra-se ativamente no serviço de Extração (.NET) facilitando orquestrações ricas com LLMs (chain-of-thought, elaboração de prompts) em C#.
 
-### 3.1. Autenticação e Conta (`/auth`)
+### 2.2. Inteligência Artificial e Agente Autônomo (Python 3.12)
+O coração cognitivo do projeto, lidando com lógica inferencial imprevisível:
+* **Hermes Agent (Nous Research)**: Framework assíncrona avançada de Agentes de IA baseada em Python. Mantém a memória contextual em conversas pelo WhatsApp, avalia eixos de intenção de mensagens de entrada (Intent Classification) e invoca dinamicamente ferramentas de extração a partir da diretoria interna (`skills/`).
+* **Model Context Protocol (MCP)**: Utilizado para unificar e escalar ferramentas. O `.NET Gateway` expõe os próprios *endpoints* corporativos no formato de MCP Server, permitindo ao Agente Python solicitar dados estruturados de faturas diretamente à rede .NET em linguagem natural.
+* **Ollama**: Motor de virtualização de modelos LLM. Gira localmente os pesos quânticos, mantendo-os em memória.
+* **FastAPI + Uvicorn**: Hospeda internamente o servidor API local para o *Hermes Agent* e também o Microsserviço Independente de Processamento de Áudio (`hermes-audio`).
 
-* **`POST /auth/login`**
-  * **Parâmetros**: `OAuth2PasswordRequestForm` (username, password).
-  * **Funcionamento**: Verifica o bcrypt hash da password. Se válido, gera tokens de acesso.
-  * **Payload de Retorno**: `{"access_token": "jwt...", "token_type": "bearer", "user": {...}}`
+### 2.3. Mensageria, Caching e Bases de Dados
+* **PostgreSQL (com extensão pgvector)**: Central de persistência. Substitui bases de dados vetoriais dedicadas (como ChromaDB ou Pinecone) consolidando num único local as tabelas relacionais de *Invoices/Users* e o *Vector Space* dos embeddings documentais (facilitando RAG — Retrieval-Augmented Generation).
+* **RabbitMQ**: Broker AMQP robusto e escalável onde se formam as filas de processamento (`review_queue`, `extraction_queue`, `notification_queue`).
+* **Redis**: Cache ultrarrápida In-Memory usada fundamentalmente para rate-limiting, gestão de sessões WebSocket em realtime e agregação temporária dos KPIs de *Analytics*.
 
-* **`POST /auth/register`**
-  * **Parâmetros**: `email`, `password`, `company_name`, `full_name`.
-  * **Funcionamento**: Cria um novo `User` e gera o seu isolamento via um novo `tenant_id`. Inicia as definições padrão (WebhookConfig, etc).
+### 2.4. LLMs Locais (Arquitetura Dual-Model)
+Para mitigar os longos tempos de geração nos modelos imensos (12 biliões), optou-se por um despachante dual na família **Qwen 2.5**:
+* **Qwen 2.5: 1.5B (Rápido)**: Modelo ultraleve operando tarefas de front-line como "Decisão de Rota de Conversa", "Classificação de Intenção do WhatsApp" e "Classificação de Spam". Resulta em inferências em frações de segundo.
+* **Qwen 2.5: 12B (Preciso)**: Modelo principal, ativado perante hardware suportado (GPU), especializado na Extração Analítica Complexa de JSON (NIF, IBAN, Valores Totais, e dezenas de itens de linha cruzados de uma fatura de múltiplas páginas).
 
-### 3.2. Gestão de Faturas (`/invoices`)
+### 2.5. Frontend / Web UI
+* **React 18 + Vite**: O motor ultra-veloz de desenvolvimento e transpilação moderna para a SPA corporativa servida em instâncias de Nginx na porta 5173.
+* **Tailwind CSS & Framer Motion**: Estilização imersiva baseada em utilitários e sistema declarativo de animações (microinterações) focado numa experiência Glassmorphism Premium.
+* **Zustand**: Gestor de estado global super leve (em substituição do Redux) encarregue da sincronização reativa dos KPIs do painel de administração e da tesouraria global.
 
-* **`GET /invoices`**
-  * **Parâmetros**: Paginação (`skip`, `limit`), Filtros (`status`, `vendor`, `date_from`, `date_to`).
-  * **Funcionamento**: Pesquisa na base PostgreSQL pelas faturas filtrando pelo `tenant_id` do request. Retorna a lista acompanhada do somatório total da query (útil para totalizadores).
-  * **Payload**: `{"data": [{InvoiceRecord}], "total_count": int, "aggregated_sum": float}`
-
-* **`GET /invoices/{id}`**
-  * **Parâmetros**: `id` da fatura na path.
-  * **Funcionamento**: Retorna os detalhes minuciosos (incluindo array de `items` / LineItems) de uma fatura específica.
-
-* **`PUT /invoices/{id}/status`**
-  * **Parâmetros**: `status` ("pending", "paid", "review_required", "reconciled").
-  * **Funcionamento**: Altera o estado do documento. Desencadeia eventos via WebSocket para atualizar os ecrãs dos utilizadores instantaneamente.
-
-### 3.3. Caixa de Entrada e Documentos (`/documents` & `/emails`)
-
-* **`POST /documents/upload`**
-  * **Parâmetros**: `file` (UploadFile multipart/form-data).
-  * **Funcionamento**: Valida MimeTypes (PDF, PNG, JPG). Grava o ficheiro na pasta `/tmp/uploads`, cria um `InvoiceRecord` genérico com o status "processing" e despacha o Celery Task (`enqueue_ocr_job`). Retorna o ID da tarefa.
-  * **Payload**: `{"task_id": "uuid", "invoice_id": "uuid", "status": "processing"}`
-
-* **`GET /emails/sync`**
-  * **Parâmetros**: Nenhum explícito (usa os tokens guardados na DB para a conta conectada).
-  * **Funcionamento**: Despoleta o `sync_tenant_emails_task` via Celery, que vai ao provedor de email da empresa, descarrega novos emails, isola os anexos, grava no MongoDB e desencadeia OCRs em massa.
-
-### 3.4. Busca Semântica Avançada (`/search`)
-
-* **`GET /search`**
-  * **Parâmetros**: `q` (query de texto natural), `limit`, `status`, `document_type`.
-  * **Funcionamento**: Converte a string `q` para vetores de 768 dimensões com Ollama, efetua similaridade de coseno no ChromaDB, filtra por metadados de status e retorna os resumos textuais rankeados.
-  * **Payload**: `{"query": str, "total_results": int, "results": [{"invoice_id": str, "score": float, "snippet": str, "metadata": dict}]}`
-
-* **`POST /search/reindex`**
-  * **Funcionamento**: Endpoint administrativo. Lê todo o histórico do PostgreSQL para um Tenant e re-vetoriza forçadamente para dentro do ChromaDB.
-
-### 3.5. Reconciliação Bancária (`/reconciliation`)
-
-* **`POST /reconciliation/auto-match`**
-  * **Funcionamento**: Vasculha recibos de pagamento (`PAYMENT_RECEIPT`) pendentes e cruza IBANs, Valores e Referências com Faturas Pendentes (`ACCOUNTS_PAYABLE`). Havendo correspondência exata, gera pares e liquida as faturas.
-
-### 3.6. Comunicação Real-time (`/ws`)
-
-* **`WebSocket /ws/{token}`**
-  * **Funcionamento**: Abre uma ligação TCP bidirecional e segura. Escuta um canal Redis local. Quando processos em background de OCR acabam, emitem eventos (`{"type": "INVOICE_PROCESSED", "id": "..."}`) empurrados diretamente para os browsers.
+### 2.6. Integrações de Interface Físicas
+* **Baileys (Node.js/TypeScript)**: Biblioteca fulcral baseada em Sockets WSS usada pelo Microsserviço `baileys-bridge`. Simula um dispositivo WhatsApp Web na perfeição, injetando as mensagens vindas da rede móvel diretamente no Agente e reenviando textos de volta para as conversas do utilizador.
 
 ---
 
-## 4. Arquitetura e Vistas do Frontend (React/Vite)
+## 3. Microsserviços e Separação de Responsabilidades (CQRS)
 
-O Frontend é desenvolvido em React e usa o conceito de *Single Page Application* (SPA), com navegação roteada por React Router DOM. Cada ecrã foca-se na eficiência operacional e riqueza visual (Micro-animações e Framer Motion).
+A robustez atinge-se dividindo os processadores operacionais e analíticos na seguinte grelha de contentores independentes:
 
-### 4.1. Dashboard (`Dashboard.tsx`)
-A primeira página após o login.
-* **Dados**: Interroga `GET /api/v1/analytics/kpis` e `GET /api/v1/analytics/charts`.
-* **Fluxo**: Ao carregar, o Zustand verifica a sessão. O ecrã mostra de imediato contadores de faturas pendentes, valores a pagamento, e gráficos de evolução temporal. Integra *WebSockets* para que os contadores pisquem e mudem de valor sem necessitar de refresh se um email acabar de chegar.
-
-### 4.2. Caixa de Entrada (`InvoicesInbox.tsx` e `UniversalInbox.tsx`)
-* **Propósito**: Onde chegam os emails e os resultados diretos do OCR.
-* **Integração Backend**: Efetua chamadas a `GET /invoices` com filtro de datas e status "pending".
-* **Interatividade**: Dispõe de um componente Modal (`DocumentViewerModal.tsx`) que intercepta o clique do utilizador numa fatura, pede o binário (blob) do documento ao endpoint seguro (`GET /api/v1/documents/view/{path}`) e apresenta o PDF nativamente ou a imagem.
-
-### 4.3. Agenda de Pagamentos (`PaymentsAgenda.tsx`)
-* **Propósito**: Ferramenta central de tesouraria. Apresenta um calendário.
-* **Interatividade**: Os dias são preenchidos com *badges* coloridas que representam faturas a vencer, pendentes ou pagas. Ao selecionar o mês, a página chama o backend pedindo faturas do mês selecionado; ao selecionar o dia, a lista direita detalha quais pagamentos devem sair naquele momento. Resumos estatísticos mensais no painel lateral ajudam a gerir o fluxo de caixa.
-
-### 4.4. Fila de Revisão Humana (`ReviewQueue.tsx`)
-* **Fluxo**: Ocasionalmente, o Llama3 ou OCR terão níveis de "Confidence Score" abaixo de 90%. Esses documentos vão parar a esta fila.
-* **Ação**: O utilizador pode visualizar a foto do lado esquerdo, e o parsing extraído do lado direito num formulário (fornecedor, valor total, nif). O utilizador corrige os valores errados e clica em "Submeter Correção", desencadeando um `PUT /api/v1/review/{id}/resolve`. O LLM é treinado retrospectivamente com estas correções.
-
-### 4.5. Configurações de Conexões (`EmailLinking.tsx` & `Settings.tsx`)
-* **Objetivo**: Ecrã onde a empresa emparelha as suas caixas de correio.
-* **Mecanismo OAUTH**: Clicar em "Conectar Gmail" remete o utilizador para a landing page da Google passando a Redirect URI do nosso backend. Quando o login na Google é aceite, o utilizador regressa a `/api/v1/emails/callback/google` onde o backend troca o Auth Code pelos Tokens definitivos (Refresh/Access Token) que são guardados no PostgreSQL encriptados, redirecionando o browser de volta à dashboard com sucesso.
-
-### 4.6. Conversar com IA (`AgentChat.tsx`)
-* **Fluxo**: Representa um Chatbot (ChatGPT-like). Permite à gestão fazer perguntas como *"Quanto gastei em luz?"*.
-* **Integração**: Chama a rota `/api/v1/chat`. Com a nova funcionalidade vetorial implementada, os prompts do utilizador são transformados em queries ao banco vetorial ChromaDB de onde os metadados são retirados. O agente LLM usa esses resultados para montar a resposta natural entregue à UI via streaming (SSE).
+1. **`hermes-gateway` (Porta 5000)**: Ponto de entrada de tráfego. Avalia Rate Limits, proxy reverso, e centraliza o contrato de MCP unificado do Backend para o Cérebro de IA Python.
+2. **`hermes-identity`**: Autenticador. Emite Tokens JWT, gere a persistência e validação da segurança das senhas e chaves API das integrações externas.
+3. **`hermes-extraction`**: Operário Pesado. Consome PDFs cruos do RabbitMQ. Aplica as rotinas de Parsing ou envia recortes fotográficos com *Vision Models* via Ollama, consolidando no final um objeto C# fortificado antes de gravar.
+4. **`hermes-reconciliation`**: Assina as filas "Bancárias". Consome comprovativos emitidos via PDF e interseta (*Auto-Match*) faturas passadas (analisando IBANs e saldos em falta) e marca registos de conciliação final.
+5. **`hermes-notifications`**: Sistema emissor proativo. Ouve a flag "Fatura Paga" para disparar payloads REST corporativos (Webhooks) para o software nativo da empresa-cliente (Sage, PHC, SAP).
+6. **`hermes-analytics`**: Centraliza os fluxos transacionais, somando totais monetários aglomerados em caches Redis de modo a manter a página de Dashboard sempre a zero milissegundos de tempo de load.
+7. **`hermes-vector`**: Inteligência RAG acoplada. Vetoriza fragmentos de qualquer email/fatura nova no formato dimensional do `pgvector`, tornando magicamente possível inquirir ao Agente pelo WhatsApp: *"Podes mostrar-me em que gastamos 300€ num restaurante a semana passada?"*
+8. **`hermes-review-queue`**: Onde opera a verificação Humana (Human-in-the-Loop). Se o *Confidence Score* de extração for medíocre (< 90%), o documento é resgatado do automatismo e estaciona numa UI para conferência humana de revisão.
+9. **`hermes-audio`**: Transcrição fonética (STT - Speech-To-Text) convertendo mensagens de áudio atiradas ao WhatsApp num texto literal para o processamento limpo do *Hermes Agent*.
 
 ---
 
-## 5. Fluxo de Integração Holístico (O Ciclo de Vida de um Email)
+## 4. O Fluxo Orgânico da Informação (Exemplo de Ciclo de Vida)
 
-Para compreender como todas as peças funcionam em sintonia perfeita, aqui está o ciclo de vida completo:
+Para compreender como a complexidade flui como uma orquestra, basta seguir o cenário principal:
 
-1. **Chegada (Cron/Sync)**: O Celery Task do Backend acorda, liga-se ao servidor IMAP da conta ligada do utilizador e deteta um novo email de "no-reply@edp.pt".
-2. **Ingestão (MongoDB)**: O corpo é processado e o PDF em anexo é salvo em `/tmp/email_attachments`. Um registo "cru" vai para o Mongo.
-3. **Fila de Execução (Celery/Redis)**: A rota interna insere uma tarefa na fila de OCR (`enqueue_ocr_job`).
-4. **Extração (AI)**: O `celery_worker` apanha o documento, converte a imagem e roda o Tesseract. A string crua de letras é enviada ao Llama 3 sob um Prompt rigoroso para extração em JSON (`PydanticOutputParser`).
-5. **Classificação Vetorial (ChromaDB)**: Havendo sucesso, o texto extraído vai ao Ollama ser condensado em *embeddings* e indexado num `VectorStore`.
-6. **Armazenamento de Negócio (PostgreSQL)**: Um novo `InvoiceRecord` entra na tabela.
-7. **Notificação Real-time (WebSockets)**: O Redis emite um PUB/SUB `invoice_processed`. O `main.py` de FastAPI apanha a notificação e empurra para a ligação TCP/WebSocket do browser.
-8. **UI Response (React)**: No browser do utilizador, que estava com o `Dashboard.tsx` aberto, ouve-se o "ding", o contador salta de 5 faturas para 6 e uma notificação *toast* aparece "Nova fatura da EDP pronta!". Tudo sem refrescar a página.
-9. **Resolução Contabilística**: O utilizador clica na fatura, agenda o pagamento no seu banco e através da página `InvoicesInbox.tsx`, altera o Status para *Pago*. O ciclo encerra-se.
+1. **A Captura Inicial**: O fornecedor remete um e-mail com anexo, ou em alternativa, o Administrador fotografa a fatura com o seu smartphone e partilha o ficheiro por WhatsApp para o contacto do *Bot* do Hermes.
+2. **Interseção no Bridge**: O script WSS (`baileys-bridge`) capta instantaneamente o Base64 do PDF da foto de WhatsApp e envia para o `hermes-agent`. A IA avalia a Intenção (*Intent Classification*) da foto e reconhece: *"É uma submissão de nova fatura."*
+3. **Colocação no Message Broker**: O ficheiro é enviado via POST para a Gateway `hermes-gateway` que descarrega rapidamente na fila RabbitMQ sob o evento `Document.Received`. A Gateway responde 200 OK liberta a ligação do WhatsApp.
+4. **Pipeline de Inferência**: O `hermes-extraction` nota o alerta na fila. Retira a imagem, chama o Semantic Kernel, extrai chaves-valores num esquema fixo e verifica se tudo cruza.
+5. **Classificação Vetorial e CQRS**: Com o parsing bem-sucedido, o modelo vetorial (`hermes-vector`) regista a nova fatura dimensionalmente no banco de dados da tesouraria do PostgreSQL. Dispara o evento cimeiro `Invoice.Processed`.
+6. **Live Update Global**: 
+    - O ecrã Frontend React, via SignalR/WebSocket, pisca em tempo-real na mesa do CFO mostrando: "Fatura de Restaurante - 30.50€ aguarda pagamento." 
+    - Em simultâneo, o *Hermes Agent* escreve de volta na conversa do WhatsApp do administrador a notificação: *"A fatura que enviou foi extraída e arquivada com sucesso com um valor de 30,50€!"*
 
 ---
 
-### Notas de Segurança
-- As comunicações front/back assumem origens pre-definidas de CORS.
-- Todo o tráfego a partir dos views de React está englobado pelo middleware de intercepção JWT do Axios, o qual renova silenciosamente os tokens se expirados recorrendo a `/auth/refresh`.
-- Nenhum acesso de ficheiros ocorre na raiz de sistema: a visualização de faturas (anexos) requer endpoints validados pela sessão.
+## 5. Deployment e Setup Básico
+
+Toda a infraestrutura densa está contida dentro de receitas e layers limpas num macro orquestrador de Contentores Docker.
+
+### 5.1. Pré-Requisitos
+- **Docker Engine + Compose** (V2+).
+- Variáveis seguras declaradas no `.env` (ex: passwords, chaves JWT secretas, etc).
+- Para ativar o modelo superior (qwen2.5:12b), requer GPU NVIDIA com Cuda compatível e flag no docker: `PULL_LARGE_MODEL=true`.
+
+### 5.2. Compilação Universal Num Só Passo
+```bash
+docker compose up -d --build
+```
+> Com este comando simples, o motor encarrega-se de compilar as DLLs do C#, executar as buils de Node, levantar a bridge do WhatsApp, configurar as Skills de Python, baixar os modelos localmente e gerir a ordem saudável de *Healthchecks* no background.
+
+### 5.3. Emparelhamento Interativo WhatsApp
+Uma vez o sistema online, o sub-serviço do Hermes fica com a sessão virgem pendente. Deve aceder aos terminais TTY do contentor na linha de comandos para capturar o código QR fotográfico oficial:
+```bash
+docker exec -it hermes_agent hermes whatsapp
+```
+Leia esse QR com a câmara do WhatsApp no "Dispositivo Físico do Bot". A sessão persistirá localmente nos volumes mapeados (`auth_sessions`), reatando nativamente em futuros reinícios de servidor.
